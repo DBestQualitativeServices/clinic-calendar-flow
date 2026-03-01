@@ -1,74 +1,94 @@
 
 
-# Status implementare vs. Plan
+# Plan: Medical Forms Module
 
-## Implementat deja
-- **Phase 1** — Foundation & Theme (types, CSS variables, status colors, Tailwind config)
-- **Phase 2** — Calendar daily view (doctor columns, time rows, 15-min midlines, headers with specialty chips and load indicator, vacation overlay, hatched blocked slots)
-- **Phase 3** — Appointment cards (proportional height, status colors, pulse animation on Sosit, family badge)
-- **Phase 5** — Global Toolbar (logo, "Programare nouă", specialty filter, date navigation)
-- **Phase 6** — Walk-in zone (collapsible, compact cards)
-- **Phase 7** — Empty slot popover (Programare nouă + Blocare interval)
-- **Phase 8** — Booking panel (patient search, consultation selector, multi-patient, recurring UI, slot list, confirmation + SMS toggle) — partial: recurring auto-generation and "View on calendar" micro-flow are missing
-- **Phase 9** — Appointment popover (status-conditional actions, check-in with incomplete data banner, cancel dialog)
-- **Phase 10** — Appointment details panel (patient/doctor info, timeline, notes, action buttons)
-- **Phase 14** — Auto-transition Sosit → In consult (interval in AppProvider)
+## Overview
+Add a medical forms management system to the existing clinic scheduling app. Two interfaces: reception desk (desktop, integrated with sidebar nav) and patient tablet (separate `/tablet` route, touch-optimized). This is a large feature — I'll implement it in two batches.
 
-## Neimplementat
+## What changes
 
-### 1. Weekly per-doctor view (Phase 2 partial)
-- Double-click on doctor header → switch to weekly view (columns = Mon–Sat)
-- "Back to daily" button in toolbar
-- Smooth transition animation
-- CalendarGrid currently only renders daily view
+### 1. Types & Mock Data
+- Add to `src/types/index.ts`: `FormTemplate`, `FormQuestion`, `CompletedForm`, `TabletSession`, `ConsultFormRequirements`
+- Add to `src/data/mock.ts`: all 5 form templates, `consultFormRequirements` map (consultation name → template IDs), sample `completedForms` (valid, expired, none scenarios), sample `tabletSessions`
 
-### 2. Drag & Drop (Phase 4 — entirely missing)
-- Vertical drag on same column to change time (Programat/Sosit)
-- Horizontal drag to change doctor (Programat only) with specialization validation
-- Walk-in cards draggable from walk-in zone onto calendar slots
-- Visual feedback: ghost card, green valid slots, orange overlap outline
-- Confirmation dialog for doctor changes
-- SMS warning on move if SMS was sent
-- Snap-back animation on invalid drop
+### 2. Forms State in appStore
+- Add `completedForms`, `tabletSessions` arrays to `AppProvider` state
+- Add actions: `addCompletedForm`, `addTabletSession`, `removeTabletSession`
+- Expose a helper `getFormsStatus(appointmentId)` that computes required vs completed/valid forms for a given appointment
 
-### 3. "View on calendar" micro-flow (Phase 8 partial)
-- Button in booking panel that temporarily closes panel, highlights available slots on calendar, user clicks a slot, panel reopens with selection applied
+### 3. Sidebar Navigation (A5)
+- Create `src/components/layout/SidebarNav.tsx` — dark background (`#1B2A3D`), collapsible (icon-only mode), state persisted in `localStorage`
+- Items: Programări (`/scheduling`), Formulare (`/forms`), Pacienți/Consulturi/Setări (placeholders)
+- Create `src/components/layout/AppLayout.tsx` — wraps sidebar + content area
+- Restructure routing in `App.tsx`:
+  - `/scheduling` → existing Index content (calendar)
+  - `/forms` → FormsPage
+  - `/patients`, `/consultations`, `/settings` → placeholder pages
+  - `/` redirects to `/scheduling`
+  - `/tablet` → tablet flow (NO sidebar, separate layout)
+- Move `AppProvider` up into `AppLayout` so state is shared across reception pages
 
-### 4. Recurring appointment auto-generation (Phase 8 partial)
-- Currently only has UI (checkbox + frequency + count) but `handleConfirm` creates a single appointment — does not auto-generate recurring occurrences on available slots
+### 4. FormsStatusBadge (A1)
+- Create `src/components/forms/FormsStatusBadge.tsx` — small chip showing `completed/total` with green/orange/red background
+- Uses `getFormsStatus()` helper to compute counts from consultation types → required form templates → completed forms
+- Integrate into existing `AppointmentCard.tsx`, `AppointmentPopover.tsx`, `AppointmentDetailsPanel.tsx`
 
-### 5. Finalization Modal (Phase 11 — entirely missing)
-- Centered modal with overlay when "Finalizează" is clicked
-- Appointment summary
-- Interactive non-blocking checklist: Payment done, Documents printed, Next appointment created
-- Each checklist item with inline action button
-- "Finalize and close" always active
+### 5. FormsStatusPanel (A2)
+- Create `src/components/forms/FormsStatusPanel.tsx` — detailed forms section
+- Shows each required form with status badge (Valid/Pending/Expirat), dates
+- Tablet access code display with Copy + Regenerate buttons
+- Multi-patient support with tabs
+- Integrate as a section inside `AppointmentDetailsPanel.tsx`
 
-### 6. Patient Form — complete variant (Phase 12 — entirely missing)
-- Full patient form in shared slide-in container (all fields: name, CNP, DOB, phone, email, address, medical notes)
-- Triggered at check-in for incomplete patients, or from details panel
-- PanelContainer references `patientForm` type but no `PatientFormPanel` component exists
-- Validation (CNP format, phone format)
+### 6. FormsChecklistItem (A3)
+- Add forms line to `FinalizationModal.tsx` checklist — shows `X/Y` status, expandable list of missing forms if incomplete, non-blocking
 
-### 7. No-show Notification Banner (Phase 13 — entirely missing)
-- Persistent banner below toolbar when previous-day appointments remain unresolved
-- Expandable list with per-appointment actions: Mark no-show, Was present, Reschedule
-- Dismissible but reappears until all resolved
+### 7. FormsPage (A4)
+- Create `src/pages/FormsPage.tsx` — patient search bar, table of form history with columns (Form, Date, Expires, Status, Appointment)
+- Filter: All/Valid/Expired, sorted by most recent
 
-### 8. Overlapping cards side-by-side (Phase 3 partial)
-- Spec says overlapping appointments on same doctor should display side-by-side (half-width) like Google Calendar — not currently implemented in DoctorColumn
+### 8. Tablet Interface (B1-B4)
+- Create `src/pages/tablet/TabletLogin.tsx` — centered layout, OTP-style 4-digit input (using existing `input-otp`), large touch buttons, validates against `tabletSessions`
+- Create `src/pages/tablet/TabletFormsList.tsx` — greeting header, pending forms (orange accent cards) + completed forms (gray), "Verifică formulare noi" button, "Ieșire" button
+- Create `src/pages/tablet/TabletFormView.tsx` — scrollable questions (large checkboxes, radio chips, textareas), HTML5 canvas signature pad (touch/mouse), "Confirm și trimite" button (disabled until required fields + signature), saves as base64
+- Create `src/pages/tablet/TabletLayout.tsx` — wrapper with inactivity timeout (10min), overlay on expiry, resets to login
+- All tablet pages use large fonts (18px+ body), 48px+ buttons, single column, calm medical palette
 
-## Proposed implementation order
+### 9. Signature Canvas
+- Create `src/components/tablet/SignatureCanvas.tsx` — HTML5 canvas with touch/mouse drawing, "Șterge semnătura" reset button, exports as base64 PNG data URL
 
-**Batch 1** — Complete missing core features:
-1. Finalization Modal (Phase 11)
-2. Patient Form complete variant (Phase 12)
-3. No-show Banner (Phase 13)
-4. Recurring auto-generation logic in BookingPanel
-5. Overlapping cards side-by-side layout
+## File inventory (new files)
+```
+src/types/index.ts (extend)
+src/data/mock.ts (extend)
+src/store/appStore.tsx (extend)
+src/components/layout/SidebarNav.tsx
+src/components/layout/AppLayout.tsx
+src/components/forms/FormsStatusBadge.tsx
+src/components/forms/FormsStatusPanel.tsx
+src/pages/FormsPage.tsx
+src/pages/tablet/TabletLogin.tsx
+src/pages/tablet/TabletFormsList.tsx
+src/pages/tablet/TabletFormView.tsx
+src/pages/tablet/TabletLayout.tsx
+src/components/tablet/SignatureCanvas.tsx
+src/App.tsx (restructure routes)
+```
 
-**Batch 2** — Advanced interactions:
-6. Weekly per-doctor view
-7. Drag & Drop (full Phase 4)
-8. "View on calendar" micro-flow
+## Files modified
+```
+src/components/calendar/AppointmentCard.tsx (add FormsStatusBadge)
+src/components/calendar/AppointmentPopover.tsx (add FormsStatusBadge)
+src/components/panels/AppointmentDetailsPanel.tsx (add FormsStatusPanel)
+src/components/modals/FinalizationModal.tsx (add FormsChecklistItem)
+src/pages/Index.tsx (extract calendar content for reuse in routing)
+```
+
+## Implementation order
+1. Types, mock data, state extensions
+2. Sidebar + routing restructure + AppLayout
+3. FormsStatusBadge + integrations into existing components
+4. FormsStatusPanel + FormsPage
+5. FormsChecklistItem in FinalizationModal
+6. Tablet interface (login → forms list → form view → signature → timeout)
 
