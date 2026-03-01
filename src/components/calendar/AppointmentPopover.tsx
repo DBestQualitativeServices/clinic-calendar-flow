@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Eye, LogIn, Play, RotateCcw, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import FinalizationModal from '@/components/modals/FinalizationModal';
+import FormsStatusBadge from '@/components/forms/FormsStatusBadge';
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
   programat: { label: 'Programat', cls: 'bg-status-programat text-white' },
@@ -92,9 +93,12 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
           {/* Header */}
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-foreground truncate">{patientName}</span>
-            <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', badge.cls)}>
-              {badge.label}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <FormsStatusBadge appointmentId={apt.id} />
+              <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', badge.cls)}>
+                {badge.label}
+              </span>
+            </div>
           </div>
 
           {/* Incomplete data warning */}

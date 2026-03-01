@@ -106,3 +106,42 @@ export interface CalendarState {
   selectedDoctorId?: string; // set in weekly mode
   specialtyFilter?: string; // category ID filter
 }
+
+// ===== Medical Forms =====
+
+export interface FormQuestion {
+  id: string;
+  text: string;
+  type: 'checkbox' | 'text' | 'single_select' | 'multi_select';
+  options?: string[];
+  required: boolean;
+}
+
+export interface FormTemplate {
+  id: string;
+  title: string;
+  validityDays: number;
+  signatureCount: number;
+  questions: FormQuestion[];
+}
+
+export interface CompletedForm {
+  id: string;
+  patientId: string;
+  formTemplateId: string;
+  completedAt: string; // ISO datetime
+  expiresAt: string; // ISO datetime
+  answers: { questionId: string; value: unknown }[];
+  signatures: string[]; // base64 data URLs
+  appointmentId?: string;
+}
+
+export interface TabletSession {
+  accessCode: string;
+  appointmentId: string;
+  patientId: string;
+  active: boolean;
+  createdAt: string; // ISO datetime
+}
+
+export type ConsultFormRequirements = Record<string, string[]>; // consultation name → template IDs

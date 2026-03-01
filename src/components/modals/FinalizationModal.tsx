@@ -5,10 +5,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useAppState } from '@/store/appStore';
 import { getPatientName, getConsultationName, formatDuration } from '@/lib/calendar-utils';
-import { doctors } from '@/data/mock';
+import { doctors, formTemplates } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, CreditCard, Printer, CalendarPlus } from 'lucide-react';
+import { CheckCircle, CreditCard, Printer, CalendarPlus, FileText, AlertTriangle, ChevronDown } from 'lucide-react';
 import type { AppointmentStatus } from '@/types';
+import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface FinalizationModalProps {
   appointmentId: string;
@@ -17,7 +19,7 @@ interface FinalizationModalProps {
 }
 
 export default function FinalizationModal({ appointmentId, open, onOpenChange }: FinalizationModalProps) {
-  const { appointments, updateAppointment, setActivePanel } = useAppState();
+  const { appointments, updateAppointment, setActivePanel, getFormsStatus } = useAppState();
   const apt = appointments.find(a => a.id === appointmentId);
 
   const [paymentDone, setPaymentDone] = useState(false);
@@ -28,6 +30,7 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
 
   const doctor = doctors.find(d => d.id === apt.doctorId);
   const patientName = getPatientName(apt.patients[0]?.patientId);
+  const formsStatus = getFormsStatus(appointmentId);
 
   const handleFinalize = () => {
     updateAppointment(apt.id, {
@@ -101,6 +104,39 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
               <CalendarPlus className="h-3.5 w-3.5" /> Programează
             </Button>
           </div>
+
+          {/* Forms checklist item */}
+          {formsStatus.total > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <FileText className={cn(
+                  "h-4 w-4",
+                  formsStatus.completed === formsStatus.total ? "text-emerald-600" : "text-amber-500"
+                )} />
+                <span className="text-sm">
+                  Formulare completate: {formsStatus.completed}/{formsStatus.total}
+                  {formsStatus.completed === formsStatus.total ? ' ✓' : ' ⚠️'}
+                </span>
+              </div>
+              {formsStatus.missingTemplateIds.length > 0 && (
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 ml-6">
+                    <ChevronDown className="h-3 w-3" />
+                    {formsStatus.missingTemplateIds.length} formulare nesemnate
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="ml-6 mt-1 space-y-0.5">
+                    {formsStatus.missingTemplateIds.map(id => {
+                      const tid = id.includes(':') ? id.split(':')[1] : id;
+                      const template = formTemplates.find(t => t.id === tid);
+                      return (
+                        <p key={id} className="text-xs text-muted-foreground">• {template?.title || tid}</p>
+                      );
+                    })}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
