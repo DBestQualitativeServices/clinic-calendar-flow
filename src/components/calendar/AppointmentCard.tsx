@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import type { Appointment } from '@/types';
 import { getPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
+import AppointmentPopover from './AppointmentPopover';
 
 interface AppointmentCardProps {
   appointment: Appointment;
-  slotHeight: number; // px per 30 min
+  slotHeight: number;
 }
 
 const statusStyles: Record<string, string> = {
@@ -17,42 +18,56 @@ const statusStyles: Record<string, string> = {
   no_show: 'bg-status-no-show text-white',
 };
 
-export default function AppointmentCard({ appointment, slotHeight }: AppointmentCardProps) {
-  const heightPx = Math.max((appointment.totalDurationMinutes / 30) * slotHeight, slotHeight * 0.5);
-  const patientCount = appointment.patients.length;
-  const primaryPatient = getPatientName(appointment.patients[0]?.patientId);
-  const consultsSummary = getConsultationsSummary(appointment);
+const AppointmentCardInner = forwardRef<HTMLDivElement, AppointmentCardProps & React.HTMLAttributes<HTMLDivElement>>(
+  ({ appointment, slotHeight, ...props }, ref) => {
+    const heightPx = Math.max((appointment.totalDurationMinutes / 30) * slotHeight, slotHeight * 0.5);
+    const patientCount = appointment.patients.length;
+    const primaryPatient = getPatientName(appointment.patients[0]?.patientId);
+    const consultsSummary = getConsultationsSummary(appointment);
 
-  return (
-    <div
-      className={cn(
-        "absolute left-1 right-1 rounded-md px-2 py-1 cursor-pointer overflow-hidden transition-shadow hover:shadow-md border border-white/20",
-        statusStyles[appointment.status] ?? 'bg-muted',
-        appointment.status === 'anulat' && '[&_.patient-name]:line-through'
-      )}
-      style={{ height: `${heightPx}px` }}
-      title={`${primaryPatient} — ${consultsSummary}`}
-    >
-      <div className="flex items-start justify-between gap-1">
-        <span className="patient-name text-xs font-semibold truncate leading-tight">
-          {primaryPatient}
-        </span>
-        {patientCount > 1 && (
-          <span className="flex-shrink-0 bg-white/30 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
-            {patientCount}
+    return (
+      <div
+        ref={ref}
+        {...props}
+        className={cn(
+          "absolute left-1 right-1 rounded-md px-2 py-1 cursor-pointer overflow-hidden transition-shadow hover:shadow-md border border-white/20",
+          statusStyles[appointment.status] ?? 'bg-muted',
+          appointment.status === 'anulat' && '[&_.patient-name]:line-through',
+          props.className,
+        )}
+        style={{ height: `${heightPx}px`, ...props.style }}
+        title={`${primaryPatient} — ${consultsSummary}`}
+      >
+        <div className="flex items-start justify-between gap-1">
+          <span className="patient-name text-xs font-semibold truncate leading-tight">
+            {primaryPatient}
           </span>
+          {patientCount > 1 && (
+            <span className="flex-shrink-0 bg-white/30 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+              {patientCount}
+            </span>
+          )}
+        </div>
+        {heightPx > 28 && (
+          <p className="text-[10px] leading-tight opacity-90 truncate mt-0.5">
+            {consultsSummary}
+          </p>
+        )}
+        {heightPx > 42 && (
+          <p className="text-[10px] opacity-70 mt-0.5 text-right">
+            {formatDuration(appointment.totalDurationMinutes)}
+          </p>
         )}
       </div>
-      {heightPx > 28 && (
-        <p className="text-[10px] leading-tight opacity-90 truncate mt-0.5">
-          {consultsSummary}
-        </p>
-      )}
-      {heightPx > 42 && (
-        <p className="text-[10px] opacity-70 mt-0.5 text-right">
-          {formatDuration(appointment.totalDurationMinutes)}
-        </p>
-      )}
-    </div>
+    );
+  }
+);
+AppointmentCardInner.displayName = 'AppointmentCardInner';
+
+export default function AppointmentCard({ appointment, slotHeight }: AppointmentCardProps) {
+  return (
+    <AppointmentPopover appointment={appointment}>
+      <AppointmentCardInner appointment={appointment} slotHeight={slotHeight} />
+    </AppointmentPopover>
   );
 }
