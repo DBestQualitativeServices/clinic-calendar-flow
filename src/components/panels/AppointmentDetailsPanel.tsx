@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { LogIn, Play, CheckCircle, RotateCcw, X } from 'lucide-react';
 import type { AppointmentStatus } from '@/types';
 import FinalizationModal from '@/components/modals/FinalizationModal';
+import FormsStatusPanel from '@/components/forms/FormsStatusPanel';
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
   programat: { label: 'Programat', cls: 'bg-status-programat text-white' },
@@ -89,6 +90,9 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
           ))}
         </div>
       </div>
+
+      {/* Forms */}
+      <FormsStatusPanel appointmentId={apt.id} />
 
       {/* Notes */}
       <div>

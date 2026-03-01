@@ -5,6 +5,10 @@ import type {
   Patient,
   Appointment,
   TimeBlock,
+  FormTemplate,
+  CompletedForm,
+  TabletSession,
+  ConsultFormRequirements,
 } from '@/types';
 
 // ===== Specialization Categories =====
@@ -240,6 +244,134 @@ export const initialAppointments: Appointment[] = [
     isWalkIn: true,
     createdAt: todayISO(),
     timeline: [{ timestamp: todayISO(), action: 'Creat (walk-in)', actor: 'Recepție' }],
+  },
+];
+
+// ===== Form Templates =====
+export const formTemplates: FormTemplate[] = [
+  {
+    id: 'ft1',
+    title: 'Acord prelucrare date (GDPR)',
+    validityDays: 365,
+    signatureCount: 1,
+    questions: [
+      { id: 'q1', text: 'Sunt de acord cu prelucrarea datelor personale conform GDPR.', type: 'checkbox', required: true },
+      { id: 'q2', text: 'Sunt de acord cu fotografierea în scop medical.', type: 'checkbox', required: false },
+    ],
+  },
+  {
+    id: 'ft2',
+    title: 'Declarație alergii - Botox',
+    validityDays: 1,
+    signatureCount: 1,
+    questions: [
+      { id: 'q3', text: 'Aveți alergii cunoscute la toxina botulinică?', type: 'single_select', options: ['Da', 'Nu', 'Nu știu'], required: true },
+      { id: 'q4', text: 'Dacă da, detaliați:', type: 'text', required: false },
+      { id: 'q5', text: 'Luați medicamente anticoagulante?', type: 'single_select', options: ['Da', 'Nu'], required: true },
+    ],
+  },
+  {
+    id: 'ft3',
+    title: 'Consimțământ procedură Dermapen',
+    validityDays: 1,
+    signatureCount: 1,
+    questions: [
+      { id: 'q6', text: 'Am fost informat/ă despre riscurile procedurii.', type: 'checkbox', required: true },
+      { id: 'q7', text: 'Am fost informat/ă despre alternativele disponibile.', type: 'checkbox', required: true },
+      { id: 'q8', text: 'Observații sau întrebări:', type: 'text', required: false },
+    ],
+  },
+  {
+    id: 'ft4',
+    title: 'Consimțământ fotografiere',
+    validityDays: 365,
+    signatureCount: 1,
+    questions: [
+      { id: 'q9', text: 'Sunt de acord cu fotografierea înainte și după procedură.', type: 'checkbox', required: true },
+      { id: 'q10', text: 'Sunt de acord cu utilizarea fotografiilor în scop educațional.', type: 'checkbox', required: false },
+    ],
+  },
+  {
+    id: 'ft5',
+    title: 'Acord tratament minor',
+    validityDays: 1,
+    signatureCount: 2,
+    questions: [
+      { id: 'q11', text: 'Numele reprezentantului legal:', type: 'text', required: true },
+      { id: 'q12', text: 'Relația cu pacientul:', type: 'single_select', options: ['Părinte', 'Tutore legal', 'Alt reprezentant'], required: true },
+      { id: 'q13', text: 'Confirm că sunt de acord cu tratamentul minorului.', type: 'checkbox', required: true },
+    ],
+  },
+];
+
+// ===== Consultation → Form Requirements =====
+export const consultFormRequirements: ConsultFormRequirements = {
+  'Dermapen': ['ft1', 'ft3', 'ft4'],
+  'Botox': ['ft1', 'ft2', 'ft4'],
+  'Acid hialuronic': ['ft1', 'ft4'],
+  'Peeling chimic': ['ft1', 'ft4'],
+  'Chirurgie minoră': ['ft1', 'ft3', 'ft4'],
+  'Dermatoscopie': ['ft1'],
+  'Consultație': ['ft1'],
+  'Control': ['ft1'],
+  'Crioterapie': ['ft1'],
+  'Biopsie': ['ft1', 'ft3'],
+  'Consult GDPR': ['ft1'],
+};
+
+// ===== Completed Forms (mock) =====
+export const initialCompletedForms: CompletedForm[] = [
+  {
+    id: 'cf1',
+    patientId: 'p-1',
+    formTemplateId: 'ft1',
+    completedAt: '2026-01-15T10:30:00',
+    expiresAt: '2027-01-15T10:30:00',
+    answers: [{ questionId: 'q1', value: true }, { questionId: 'q2', value: true }],
+    signatures: ['data:image/png;base64,mock-sig-1'],
+    appointmentId: 'apt-1',
+  },
+  {
+    id: 'cf2',
+    patientId: 'p-1',
+    formTemplateId: 'ft4',
+    completedAt: '2026-01-15T10:35:00',
+    expiresAt: '2027-01-15T10:35:00',
+    answers: [{ questionId: 'q9', value: true }, { questionId: 'q10', value: false }],
+    signatures: ['data:image/png;base64,mock-sig-2'],
+    appointmentId: 'apt-1',
+  },
+  {
+    id: 'cf3',
+    patientId: 'p-1',
+    formTemplateId: 'ft3',
+    completedAt: '2026-02-28T09:00:00',
+    expiresAt: '2026-03-01T09:00:00', // expired (1 day validity)
+    answers: [{ questionId: 'q6', value: true }, { questionId: 'q7', value: true }],
+    signatures: ['data:image/png;base64,mock-sig-3'],
+    appointmentId: 'apt-1',
+  },
+  // p-2 has no forms at all
+  // p-5 has partial forms
+  {
+    id: 'cf4',
+    patientId: 'p-5',
+    formTemplateId: 'ft1',
+    completedAt: '2026-02-20T14:00:00',
+    expiresAt: '2027-02-20T14:00:00',
+    answers: [{ questionId: 'q1', value: true }],
+    signatures: ['data:image/png;base64,mock-sig-4'],
+  },
+];
+
+// ===== Tablet Sessions (mock) =====
+export const initialTabletSessions: TabletSession[] = [
+  {
+    accessCode: '4821',
+    appointmentId: 'apt-1',
+    patientId: 'p-1',
+    active: true,
+    createdAt: '2026-03-01T09:15:00',
   },
 ];
 

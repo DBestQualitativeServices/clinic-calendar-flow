@@ -3,6 +3,7 @@ import type { Appointment } from '@/types';
 import { getPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import AppointmentPopover from './AppointmentPopover';
+import FormsStatusBadge from '@/components/forms/FormsStatusBadge';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -42,11 +43,14 @@ const AppointmentCardInner = forwardRef<HTMLDivElement, AppointmentCardProps & R
           <span className="patient-name text-xs font-semibold truncate leading-tight">
             {primaryPatient}
           </span>
-          {patientCount > 1 && (
-            <span className="flex-shrink-0 bg-white/30 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
-              {patientCount}
-            </span>
-          )}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <FormsStatusBadge appointmentId={appointment.id} />
+            {patientCount > 1 && (
+              <span className="bg-white/30 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                {patientCount}
+              </span>
+            )}
+          </div>
         </div>
         {heightPx > 28 && (
           <p className="text-[10px] leading-tight opacity-90 truncate mt-0.5">
