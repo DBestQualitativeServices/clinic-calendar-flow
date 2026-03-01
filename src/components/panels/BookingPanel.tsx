@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState, type PanelType } from '@/store/appStore';
-import { patients as allPatients, doctors, categories, consultationTypes } from '@/data/mock';
+import { useUIState, type PanelType } from '@/store/uiStore';
+import { usePatients, useDoctors, useCategories, useConsultationTypes, useCreateAppointment, useAvailableSlots } from '@/hooks/mock';
+import { usePatientById } from '@/hooks/mock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,8 +11,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Search, X, Plus, User, Calendar, Clock, Send } from 'lucide-react';
-import { formatDuration, getConsultationName, minutesToTime, timeToMinutes, generateTimeSlots } from '@/lib/calendar-utils';
-import type { Appointment, AppointmentPatient, AppointmentConsultation } from '@/types';
+import { formatDuration, minutesToTime, timeToMinutes } from '@/lib/calendar-utils';
+import type { Appointment, AppointmentPatient } from '@/types';
 
 interface BookingPanelProps {
   prefill?: PanelType & { type: 'booking' };
@@ -31,15 +32,17 @@ function createEmptyPatientEntry(): PatientEntry {
 }
 
 export default function BookingPanel({ prefill }: BookingPanelProps) {
-  const { addAppointment, appointments, timeBlocks, setActivePanel, calendar } = useAppState();
+  const { setActivePanel, calendar } = useUIState();
+  const { mutate: addAppointment } = useCreateAppointment();
+  const { data: doctors } = useDoctors();
+  const { data: categories } = useCategories();
+  const { data: allConsultationTypes } = useConsultationTypes();
   const pf = prefill?.prefill;
 
-  // Patient entries (multi-patient support)
   const [patientEntries, setPatientEntries] = useState<PatientEntry[]>([createEmptyPatientEntry()]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearchIdx, setActiveSearchIdx] = useState(0);
 
-  // Scheduling
   const [specificDoctor, setSpecificDoctor] = useState(!!pf?.doctorId);
   const [selectedDoctorId, setSelectedDoctorId] = useState(pf?.doctorId || '');
   const [isWalkIn, setIsWalkIn] = useState(false);
@@ -47,28 +50,17 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
   const [selectedTime, setSelectedTime] = useState(pf?.startTime || '');
   const [sendSms, setSendSms] = useState(true);
 
-  // Recurring
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState('weekly');
   const [recurringCount, setRecurringCount] = useState('4');
 
-  // Search patients
-  const searchResults = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
-    const q = searchQuery.toLowerCase();
-    return allPatients.filter(p =>
-      `${p.lastName} ${p.firstName}`.toLowerCase().includes(q) ||
-      p.phone.includes(q) ||
-      p.cnp?.includes(q)
-    ).slice(0, 5);
-  }, [searchQuery]);
+  const { data: searchResults } = usePatients(activeSearchIdx >= 0 ? searchQuery : undefined);
+  const filteredSearchResults = useMemo(() => (searchQuery.length >= 2 ? searchResults.slice(0, 5) : []), [searchResults, searchQuery]);
 
-  // Compute total duration
   const totalDuration = useMemo(() =>
     patientEntries.reduce((sum, pe) => sum + pe.consultations.reduce((s, c) => s + c.duration, 0), 0),
   [patientEntries]);
 
-  // Eligible doctors (those having all required categories)
   const requiredCategories = useMemo(() => {
     const cats = new Set<string>();
     patientEntries.forEach(pe => pe.consultations.forEach(c => cats.add(c.categoryId)));
@@ -77,51 +69,16 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
 
   const eligibleDoctors = useMemo(() =>
     doctors.filter(d => !d.isOnVacation && [...requiredCategories].every(cat => d.categoryIds.includes(cat))),
-  [requiredCategories]);
+  [doctors, requiredCategories]);
 
-  // Available slots
-  const availableSlots = useMemo(() => {
-    if (totalDuration === 0) return [];
-    const targetDocs = specificDoctor && selectedDoctorId ? [doctors.find(d => d.id === selectedDoctorId)!].filter(Boolean) : eligibleDoctors;
-    const slots: { date: string; time: string; doctorId: string; doctorName: string }[] = [];
-    const timeSlots = generateTimeSlots();
+  const eligibleDoctorIds = useMemo(() => eligibleDoctors.map(d => d.id), [eligibleDoctors]);
 
-    // Check next 14 days
-    for (let dayOffset = 0; dayOffset < 14 && slots.length < 10; dayOffset++) {
-      const d = new Date(selectedDate + 'T00:00:00');
-      d.setDate(d.getDate() + dayOffset);
-      const dateStr = d.toISOString().split('T')[0];
-      const dayOfWeek = d.getDay();
-      if (dayOfWeek === 0) continue; // Sunday
-
-      for (const doc of targetDocs) {
-        for (const slot of timeSlots) {
-          const startMin = timeToMinutes(slot);
-          const endMin = startMin + totalDuration;
-          if (endMin > 1080) continue; // past 18:00
-
-          // Check overlaps with existing appointments
-          const hasOverlap = appointments.some(a =>
-            a.doctorId === doc.id && a.date === dateStr && a.startTime && a.status !== 'anulat' &&
-            timeToMinutes(a.startTime) < endMin && timeToMinutes(a.startTime) + a.totalDurationMinutes > startMin
-          );
-
-          // Check overlaps with time blocks
-          const hasBlock = timeBlocks.some(tb =>
-            tb.doctorId === doc.id && tb.date === dateStr &&
-            timeToMinutes(tb.startTime) < endMin && timeToMinutes(tb.startTime) + tb.durationMinutes > startMin
-          );
-
-          if (!hasOverlap && !hasBlock) {
-            slots.push({ date: dateStr, time: slot, doctorId: doc.id, doctorName: doc.name });
-            if (slots.length >= 10) break;
-          }
-        }
-        if (slots.length >= 10) break;
-      }
-    }
-    return slots;
-  }, [totalDuration, specificDoctor, selectedDoctorId, eligibleDoctors, selectedDate, appointments, timeBlocks]);
+  const { data: availableSlots } = useAvailableSlots(
+    selectedDate,
+    specificDoctor && selectedDoctorId ? selectedDoctorId : undefined,
+    totalDuration,
+    !specificDoctor || !selectedDoctorId ? eligibleDoctorIds : undefined
+  );
 
   const selectPatient = (idx: number, patientId: string) => {
     setPatientEntries(prev => prev.map((pe, i) => i === idx ? { ...pe, patientId, isNew: false } : pe));
@@ -129,7 +86,7 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
   };
 
   const addConsultation = (idx: number, categoryId: string, typeId: string) => {
-    const ct = consultationTypes.find(c => c.id === typeId);
+    const ct = allConsultationTypes.find(c => c.id === typeId);
     if (!ct) return;
     setPatientEntries(prev => prev.map((pe, i) => i === idx
       ? { ...pe, consultations: [...pe.consultations, { categoryId, typeId, duration: ct.defaultDurationMinutes }] }
@@ -178,7 +135,6 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
       const offsetDays = i * freqDays;
       const aptDate = new Date(selectedDate + 'T00:00:00');
       aptDate.setDate(aptDate.getDate() + offsetDays);
-      // Skip Sundays
       if (aptDate.getDay() === 0) aptDate.setDate(aptDate.getDate() + 1);
       const dateStr = aptDate.toISOString().split('T')[0];
 
@@ -186,7 +142,7 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
         id: `apt-${Date.now()}-${i}`,
         doctorId,
         date: dateStr,
-        startTime: isWalkIn ? undefined : (i === 0 ? (selectedTime || undefined) : (selectedTime || undefined)),
+        startTime: isWalkIn ? undefined : (selectedTime || undefined),
         totalDurationMinutes: totalDuration,
         patients: aptPatients,
         status: 'programat',
@@ -209,7 +165,6 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
 
   return (
     <div className="space-y-6">
-      {/* SECTION 1 — Patient(s) */}
       {patientEntries.map((pe, idx) => (
         <div key={idx} className="space-y-3">
           <div className="flex items-center justify-between">
@@ -225,17 +180,7 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
           </div>
 
           {pe.patientId ? (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-accent border border-border">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">
-                  {allPatients.find(p => p.id === pe.patientId)?.lastName} {allPatients.find(p => p.id === pe.patientId)?.firstName}
-                </p>
-                <p className="text-xs text-muted-foreground">{allPatients.find(p => p.id === pe.patientId)?.phone}</p>
-              </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPatientEntries(prev => prev.map((p, i) => i === idx ? createEmptyPatientEntry() : p))}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <SelectedPatientDisplay patientId={pe.patientId} onClear={() => setPatientEntries(prev => prev.map((p, i) => i === idx ? createEmptyPatientEntry() : p))} />
           ) : pe.isNew ? (
             <div className="space-y-2 p-3 rounded-md bg-accent/50 border border-border">
               <Input placeholder="Nume complet *" className="h-8 text-xs" value={pe.newName} onChange={e => setPatientEntries(prev => prev.map((p, i) => i === idx ? { ...p, newName: e.target.value } : p))} />
@@ -254,9 +199,9 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
                   onChange={e => { setActiveSearchIdx(idx); setSearchQuery(e.target.value); }}
                 />
               </div>
-              {activeSearchIdx === idx && searchResults.length > 0 && (
+              {activeSearchIdx === idx && filteredSearchResults.length > 0 && (
                 <div className="border border-border rounded-md bg-popover shadow-md overflow-hidden">
-                  {searchResults.map(p => (
+                  {filteredSearchResults.map(p => (
                     <button key={p.id} className="w-full px-3 py-1.5 text-left text-xs hover:bg-accent transition-colors" onClick={() => selectPatient(idx, p.id)}>
                       <span className="font-medium">{p.lastName} {p.firstName}</span>
                       <span className="text-muted-foreground ml-2">{p.phone}</span>
@@ -270,7 +215,6 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
             </div>
           )}
 
-          {/* Consultations for this patient */}
           <ConsultationSelector
             consultations={pe.consultations}
             onAdd={(catId, typeId) => addConsultation(idx, catId, typeId)}
@@ -279,14 +223,12 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
         </div>
       ))}
 
-      {/* Add additional patient */}
       {patientEntries.length < 5 && (
         <Button variant="ghost" size="sm" className="text-xs gap-1 text-primary" onClick={() => setPatientEntries(prev => [...prev, createEmptyPatientEntry()])}>
           <Plus className="h-3.5 w-3.5" /> Adaugă pacient la aceeași programare
         </Button>
       )}
 
-      {/* Recurring */}
       <div className="space-y-2 pt-2 border-t border-border">
         <div className="flex items-center gap-2">
           <Checkbox id="recurring" checked={isRecurring} onCheckedChange={(v) => setIsRecurring(!!v)} />
@@ -308,7 +250,6 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
         )}
       </div>
 
-      {/* Total duration */}
       {totalDuration > 0 && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-sm">
           <Clock className="h-4 w-4 text-primary" />
@@ -317,7 +258,6 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
         </div>
       )}
 
-      {/* SECTION 4 — When */}
       <div className="space-y-3 pt-2 border-t border-border">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
           <Calendar className="h-4 w-4 text-primary" /> Când
@@ -388,7 +328,6 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
         )}
       </div>
 
-      {/* SECTION 5 — Confirmation */}
       <div className="space-y-3 pt-4 border-t border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -406,7 +345,21 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
   );
 }
 
-// Sub-component: Consultation selector
+function SelectedPatientDisplay({ patientId, onClear }: { patientId: string; onClear: () => void }) {
+  const { data: patient } = usePatientById(patientId);
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-accent border border-border">
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-foreground">{patient?.lastName} {patient?.firstName}</p>
+        <p className="text-xs text-muted-foreground">{patient?.phone}</p>
+      </div>
+      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClear}>
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
 function ConsultationSelector({
   consultations,
   onAdd,
@@ -418,10 +371,12 @@ function ConsultationSelector({
 }) {
   const [selCat, setSelCat] = useState('');
   const [selType, setSelType] = useState('');
+  const { data: categories } = useCategories();
+  const { data: allConsultationTypes } = useConsultationTypes();
 
   const filteredTypes = useMemo(() =>
-    consultationTypes.filter(ct => ct.categoryId === selCat),
-  [selCat]);
+    allConsultationTypes.filter(ct => ct.categoryId === selCat),
+  [allConsultationTypes, selCat]);
 
   const handleAdd = () => {
     if (selCat && selType) {
@@ -433,15 +388,16 @@ function ConsultationSelector({
 
   return (
     <div className="space-y-2">
-      {/* Existing consultations */}
-      {consultations.map((c, i) => (
-        <div key={i} className="flex items-center gap-2 px-2 py-1 rounded bg-muted text-xs">
-          <span className="flex-1 font-medium">{getConsultationName(c.typeId)} — {formatDuration(c.duration)}</span>
-          <button onClick={() => onRemove(i)} className="text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
-        </div>
-      ))}
+      {consultations.map((c, i) => {
+        const ct = allConsultationTypes.find(t => t.id === c.typeId);
+        return (
+          <div key={i} className="flex items-center gap-2 px-2 py-1 rounded bg-muted text-xs">
+            <span className="flex-1 font-medium">{ct?.name || c.typeId} — {formatDuration(c.duration)}</span>
+            <button onClick={() => onRemove(i)} className="text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
+          </div>
+        );
+      })}
 
-      {/* Add new */}
       <div className="flex gap-1.5 items-end">
         <div className="flex-1">
           <Select value={selCat} onValueChange={(v) => { setSelCat(v); setSelType(''); }}>

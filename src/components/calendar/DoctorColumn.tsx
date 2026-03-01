@@ -1,12 +1,11 @@
 import React, { useMemo } from 'react';
 import type { Doctor, Appointment, TimeBlock } from '@/types';
-import { categories } from '@/data/mock';
-import { useAppState } from '@/store/appStore';
+import { useCategories } from '@/hooks/mock';
+import { useUIState } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
-import { getCategoryColor } from '@/lib/calendar-utils';
 import AppointmentCard from './AppointmentCard';
 import EmptySlotPopover from './EmptySlotPopover';
-import { timeToMinutes, minutesToTime } from '@/lib/calendar-utils';
+import { timeToMinutes } from '@/lib/calendar-utils';
 
 interface DoctorColumnProps {
   doctor: Doctor;
@@ -18,17 +17,15 @@ interface DoctorColumnProps {
 
 const SLOT_HEIGHT = 60;
 
-/** Compute overlap layout: assigns left offset and width fraction to each card */
 function computeOverlapLayout(appointments: Appointment[]): Map<string, { left: number; width: number }> {
   const layout = new Map<string, { left: number; width: number }>();
   const sorted = [...appointments].sort((a, b) => timeToMinutes(a.startTime!) - timeToMinutes(b.startTime!));
-  
-  // Group overlapping appointments
+
   const groups: Appointment[][] = [];
   for (const apt of sorted) {
     const start = timeToMinutes(apt.startTime!);
     const end = start + apt.totalDurationMinutes;
-    
+
     let placed = false;
     for (const group of groups) {
       const groupOverlaps = group.some(g => {
@@ -48,10 +45,7 @@ function computeOverlapLayout(appointments: Appointment[]): Map<string, { left: 
   for (const group of groups) {
     const count = group.length;
     group.forEach((apt, i) => {
-      layout.set(apt.id, {
-        left: i / count,
-        width: 1 / count,
-      });
+      layout.set(apt.id, { left: i / count, width: 1 / count });
     });
   }
 
@@ -59,7 +53,8 @@ function computeOverlapLayout(appointments: Appointment[]): Map<string, { left: 
 }
 
 export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHeight, timeSlots }: DoctorColumnProps) {
-  const { setCalendar, calendar } = useAppState();
+  const { setCalendar, calendar } = useUIState();
+  const { data: categories } = useCategories();
 
   const totalSlots = 20;
   const occupiedSlots = Math.ceil(
@@ -70,7 +65,10 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
     setCalendar({ viewMode: 'weekly', selectedDoctorId: doctor.id });
   };
 
-  // Compute overlap layout for active appointments
+  const getCategoryColor = (catId: string): string => {
+    return categories.find(c => c.id === catId)?.color ?? 'spec-generala';
+  };
+
   const activeApts = useMemo(
     () => appointments.filter(a => a.startTime && a.status !== 'anulat'),
     [appointments]
@@ -79,7 +77,6 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
 
   return (
     <div className="flex flex-col min-w-[180px] flex-1 max-w-[280px]">
-      {/* Doctor Header */}
       <div
         className={cn(
           "sticky top-0 z-10 border-b border-r border-border p-2.5 bg-card cursor-pointer select-none",
@@ -114,10 +111,8 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
         )}
       </div>
 
-      {/* Time grid */}
       <div className="relative border-r border-border">
-        {/* Slot rows */}
-        {timeSlots.map((slot, i) => (
+        {timeSlots.map((slot) => (
           <EmptySlotPopover key={slot} doctorId={doctor.id} date={calendar.selectedDate} startTime={slot}>
             <div
               className="border-b border-border relative hover:bg-accent/30 transition-colors cursor-pointer"
@@ -129,7 +124,6 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
           </EmptySlotPopover>
         ))}
 
-        {/* Time blocks (hatched) */}
         {timeBlocks.map(tb => {
           const startMin = timeToMinutes(tb.startTime) - 480;
           const topPx = (startMin / 30) * slotHeight;
@@ -149,7 +143,6 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
           );
         })}
 
-        {/* Appointment cards (with overlap layout) */}
         {activeApts.map(apt => {
           const startMin = timeToMinutes(apt.startTime!) - 480;
           const topPx = (startMin / 30) * slotHeight;
@@ -169,7 +162,6 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
           );
         })}
 
-        {/* Cancelled appointments (faded) */}
         {appointments
           .filter(a => a.startTime && a.status === 'anulat')
           .map(apt => {

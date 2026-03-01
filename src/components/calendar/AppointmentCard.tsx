@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import type { Appointment } from '@/types';
-import { getPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
+import { usePatientById, useConsultationTypes } from '@/hooks/mock';
+import { formatPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import AppointmentPopover from './AppointmentPopover';
 import FormsStatusBadge from '@/components/forms/FormsStatusBadge';
@@ -23,8 +24,11 @@ const AppointmentCardInner = forwardRef<HTMLDivElement, AppointmentCardProps & R
   ({ appointment, slotHeight, ...props }, ref) => {
     const heightPx = Math.max((appointment.totalDurationMinutes / 30) * slotHeight, slotHeight * 0.5);
     const patientCount = appointment.patients.length;
-    const primaryPatient = getPatientName(appointment.patients[0]?.patientId);
-    const consultsSummary = getConsultationsSummary(appointment);
+    const { data: patient } = usePatientById(appointment.patients[0]?.patientId);
+    const { data: consultationTypes } = useConsultationTypes();
+    const primaryPatient = patient ? formatPatientName(patient) : 'Necunoscut';
+    const allConsultations = appointment.patients.flatMap(p => p.consultations);
+    const consultsSummary = getConsultationsSummary(allConsultations, consultationTypes);
 
     return (
       <div

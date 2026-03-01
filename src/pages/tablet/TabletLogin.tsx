@@ -2,19 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
-import { initialTabletSessions } from '@/data/mock';
-import { useAppState } from '@/store/appStore';
+import { useTabletSessionByCode } from '@/hooks/mock';
 import { FileText } from 'lucide-react';
 
 export default function TabletLogin() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
-  const { tabletSessions } = useAppState();
   const navigate = useNavigate();
+  const { data: sessionData } = useTabletSessionByCode(code);
 
   const handleAccess = () => {
-    const session = tabletSessions.find(s => s.accessCode === code && s.active);
-    if (session) {
+    if (sessionData) {
       setError('');
       navigate(`/tablet/forms?code=${code}`);
     } else {
@@ -25,7 +23,6 @@ export default function TabletLogin() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-slate-50">
       <div className="w-full max-w-sm text-center space-y-8">
-        {/* Logo placeholder */}
         <div className="flex items-center justify-center gap-3 mb-2">
           <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
             <FileText className="h-6 w-6 text-primary-foreground" />

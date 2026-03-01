@@ -1,12 +1,36 @@
 import React, { useState } from 'react';
 import type { Appointment } from '@/types';
-import { getPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
-import { doctors } from '@/data/mock';
+import { useDoctors, useConsultationTypes } from '@/hooks/mock';
+import { usePatientById } from '@/hooks/mock';
+import { formatPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WalkInZoneProps {
   walkIns: Appointment[];
+}
+
+function WalkInCard({ apt }: { apt: Appointment }) {
+  const { data: doctors } = useDoctors();
+  const { data: consultationTypes } = useConsultationTypes();
+  const { data: patient } = usePatientById(apt.patients[0]?.patientId);
+  const doctor = doctors.find(d => d.id === apt.doctorId);
+  const patientName = patient ? formatPatientName(patient) : 'Necunoscut';
+  const allConsultations = apt.patients.flatMap(p => p.consultations);
+  const consultsSummary = getConsultationsSummary(allConsultations, consultationTypes);
+
+  return (
+    <div
+      className={cn(
+        "flex-shrink-0 rounded-md px-3 py-1.5 bg-status-programat text-white text-xs cursor-grab",
+        "border border-white/20 shadow-sm hover:shadow-md transition-shadow"
+      )}
+    >
+      <p className="font-semibold">{patientName}</p>
+      <p className="opacity-80 text-[10px]">{doctor?.name} · {formatDuration(apt.totalDurationMinutes)}</p>
+      <p className="opacity-70 text-[10px] truncate max-w-[160px]">{consultsSummary}</p>
+    </div>
+  );
 }
 
 export default function WalkInZone({ walkIns }: WalkInZoneProps) {
@@ -39,22 +63,7 @@ export default function WalkInZone({ walkIns }: WalkInZoneProps) {
           {walkIns.length === 0 ? (
             <p className="text-xs text-muted-foreground py-1">Niciun pacient walk-in.</p>
           ) : (
-            walkIns.map(apt => {
-              const doctor = doctors.find(d => d.id === apt.doctorId);
-              return (
-                <div
-                  key={apt.id}
-                  className={cn(
-                    "flex-shrink-0 rounded-md px-3 py-1.5 bg-status-programat text-white text-xs cursor-grab",
-                    "border border-white/20 shadow-sm hover:shadow-md transition-shadow"
-                  )}
-                >
-                  <p className="font-semibold">{getPatientName(apt.patients[0]?.patientId)}</p>
-                  <p className="opacity-80 text-[10px]">{doctor?.name} · {formatDuration(apt.totalDurationMinutes)}</p>
-                  <p className="opacity-70 text-[10px] truncate max-w-[160px]">{getConsultationsSummary(apt)}</p>
-                </div>
-              );
-            })
+            walkIns.map(apt => <WalkInCard key={apt.id} apt={apt} />)
           )}
         </div>
       )}

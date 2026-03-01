@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import type { Appointment, AppointmentStatus } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { useAppState } from '@/store/appStore';
-import { getPatientName } from '@/lib/calendar-utils';
-import { patients } from '@/data/mock';
+import { useUIState } from '@/store/uiStore';
+import { usePatientById, useUpdateAppointmentStatus, useCheckinAppointment, useCancelAppointment } from '@/hooks/mock';
+import { formatPatientName } from '@/lib/calendar-utils';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -27,32 +27,25 @@ interface AppointmentPopoverProps {
 }
 
 export default function AppointmentPopover({ appointment, children }: AppointmentPopoverProps) {
-  const { updateAppointment, setActivePanel } = useAppState();
+  const { setActivePanel } = useUIState();
+  const { mutate: updateStatus } = useUpdateAppointmentStatus();
+  const { mutate: checkin } = useCheckinAppointment();
+  const { mutate: cancel } = useCancelAppointment();
   const [open, setOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
 
   const apt = appointment;
   const badge = statusBadge[apt.status];
-  const patientName = getPatientName(apt.patients[0]?.patientId);
-  const patient = patients.find(p => p.id === apt.patients[0]?.patientId);
+  const { data: patient } = usePatientById(apt.patients[0]?.patientId);
+  const patientName = patient ? formatPatientName(patient) : 'Necunoscut';
   const isIncomplete = patient?.isIncomplete;
 
-  const now = new Date().toISOString();
-
-  const transition = (status: AppointmentStatus, action: string) => {
-    updateAppointment(apt.id, {
-      status,
-      timeline: [...apt.timeline, { timestamp: now, action, actor: 'Recepție' }],
-    });
-    setOpen(false);
-  };
-
   const handleCheckIn = () => {
-    transition('sosit', 'Check-in');
+    checkin({ appointmentId: apt.id });
+    setOpen(false);
     toast({ title: 'Pacientul a fost înregistrat ca sosit' });
     if (isIncomplete) {
-      // Open patient form for incomplete data
       setTimeout(() => {
         setActivePanel({ type: 'patientForm', patientId: patient?.id });
       }, 300);
@@ -60,7 +53,14 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
   };
 
   const handleForceInConsult = () => {
-    transition('in_consult', 'In consult (manual)');
+    updateStatus({
+      appointmentId: apt.id,
+      update: {
+        status: 'in_consult',
+        timeline: [...apt.timeline, { timestamp: new Date().toISOString(), action: 'In consult (manual)', actor: 'Recepție' }],
+      },
+    });
+    setOpen(false);
     toast({ title: 'Statusul a fost schimbat în "În consult"' });
   };
 
@@ -70,7 +70,7 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
   };
 
   const handleCancel = () => {
-    transition('anulat', 'Anulat');
+    cancel({ appointmentId: apt.id });
     toast({ title: 'Programarea a fost anulată' });
     setCancelDialogOpen(false);
   };
@@ -90,7 +90,6 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>{children}</PopoverTrigger>
         <PopoverContent className="w-60 p-3" align="start" side="right">
-          {/* Header */}
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-foreground truncate">{patientName}</span>
             <div className="flex items-center gap-1.5">
@@ -101,7 +100,6 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
             </div>
           </div>
 
-          {/* Incomplete data warning */}
           {apt.status === 'sosit' && isIncomplete && (
             <button
               onClick={() => { setOpen(false); setActivePanel({ type: 'patientForm', patientId: patient?.id }); }}
@@ -112,7 +110,6 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
             </button>
           )}
 
-          {/* Actions */}
           <div className="flex flex-col gap-0.5">
             <Button variant="ghost" size="sm" className="justify-start gap-2 text-xs h-8" onClick={handleDetails}>
               <Eye className="h-3.5 w-3.5" /> Detalii
@@ -158,7 +155,6 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
         </PopoverContent>
       </Popover>
 
-      {/* Cancel confirmation dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -176,7 +172,6 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Finalization modal */}
       <FinalizationModal
         appointmentId={apt.id}
         open={finalizeModalOpen}
