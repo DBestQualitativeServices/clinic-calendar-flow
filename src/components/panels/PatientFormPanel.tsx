@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAppState } from '@/store/appStore';
-import { patients as allPatients } from '@/data/mock';
+import { useUIState } from '@/store/uiStore';
+import { usePatientById, useUpdatePatient } from '@/hooks/mock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ interface PatientFormPanelProps {
 }
 
 function validateCNP(cnp: string): boolean {
-  if (!cnp) return true; // optional
+  if (!cnp) return true;
   return /^\d{13}$/.test(cnp);
 }
 
@@ -23,8 +23,9 @@ function validatePhone(phone: string): boolean {
 }
 
 export default function PatientFormPanel({ patientId, onComplete }: PatientFormPanelProps) {
-  const { setActivePanel } = useAppState();
-  const existing = allPatients.find(p => p.id === patientId);
+  const { setActivePanel } = useUIState();
+  const { data: existing } = usePatientById(patientId || '');
+  const { mutate: updatePatient } = useUpdatePatient();
 
   const [form, setForm] = useState({
     lastName: existing?.lastName || '',
@@ -59,12 +60,10 @@ export default function PatientFormPanel({ patientId, onComplete }: PatientFormP
       return;
     }
 
-    // In a real app, this would update the patient in the database
-    // For now, update the mock data in-place
-    if (existing) {
-      Object.assign(existing, {
-        ...form,
-        isIncomplete: false,
+    if (patientId) {
+      updatePatient({
+        patientId,
+        updates: { ...form, isIncomplete: false },
       });
     }
 

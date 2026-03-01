@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
+import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useFormsStatus, useFormTemplates, useCompleteAppointment } from '@/hooks/mock';
+import { useUIState } from '@/store/uiStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { useAppState } from '@/store/appStore';
-import { getPatientName, getConsultationName, formatDuration } from '@/lib/calendar-utils';
-import { doctors, formTemplates } from '@/data/mock';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, CreditCard, Printer, CalendarPlus, FileText, AlertTriangle, ChevronDown } from 'lucide-react';
-import type { AppointmentStatus } from '@/types';
+import { CheckCircle, CreditCard, Printer, CalendarPlus, FileText, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { formatPatientName, formatDuration, getConsultationsSummary } from '@/lib/calendar-utils';
 
 interface FinalizationModalProps {
   appointmentId: string;
@@ -19,8 +18,13 @@ interface FinalizationModalProps {
 }
 
 export default function FinalizationModal({ appointmentId, open, onOpenChange }: FinalizationModalProps) {
-  const { appointments, updateAppointment, setActivePanel, getFormsStatus } = useAppState();
-  const apt = appointments.find(a => a.id === appointmentId);
+  const { data: apt } = useAppointmentById(appointmentId);
+  const { data: doctors } = useDoctors();
+  const { data: consultationTypes } = useConsultationTypes();
+  const { data: formsStatus } = useFormsStatus(appointmentId);
+  const { data: formTemplates } = useFormTemplates();
+  const { mutate: completeAppointment } = useCompleteAppointment();
+  const { setActivePanel } = useUIState();
 
   const [paymentDone, setPaymentDone] = useState(false);
   const [documentsPrinted, setDocumentsPrinted] = useState(false);
@@ -29,14 +33,11 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   if (!apt) return null;
 
   const doctor = doctors.find(d => d.id === apt.doctorId);
-  const patientName = getPatientName(apt.patients[0]?.patientId);
-  const formsStatus = getFormsStatus(appointmentId);
+  const allConsultations = apt.patients.flatMap(p => p.consultations);
+  const consultsSummary = getConsultationsSummary(allConsultations, consultationTypes);
 
   const handleFinalize = () => {
-    updateAppointment(apt.id, {
-      status: 'finalizat' as AppointmentStatus,
-      timeline: [...apt.timeline, { timestamp: new Date().toISOString(), action: 'Finalizat', actor: 'Recepție' }],
-    });
+    completeAppointment({ appointmentId: apt.id });
     toast({ title: 'Programare finalizată cu succes!' });
     onOpenChange(false);
   };
@@ -57,24 +58,25 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
           </DialogTitle>
         </DialogHeader>
 
-        {/* Summary */}
         <div className="rounded-lg bg-accent/50 border border-border p-3 space-y-1.5">
-          <p className="text-sm font-bold">{patientName}</p>
+          <FinalizationPatientName patientId={apt.patients[0]?.patientId} />
           <p className="text-xs text-muted-foreground">{doctor?.name}</p>
           <p className="text-xs text-muted-foreground">{apt.date} · {apt.startTime || 'Walk-in'} · {formatDuration(apt.totalDurationMinutes)}</p>
           <div className="flex flex-wrap gap-1 mt-1">
-            {apt.patients.flatMap(p => p.consultations).map((c, i) => (
-              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted font-medium">
-                {getConsultationName(c.consultationTypeId)}
-              </span>
-            ))}
+            {allConsultations.map((c, i) => {
+              const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
+              return (
+                <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted font-medium">
+                  {ct?.name || c.consultationTypeId}
+                </span>
+              );
+            })}
           </div>
         </div>
 
-        {/* Interactive checklist */}
         <div className="space-y-3 py-2">
           <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Checklist (opțional)</p>
-          
+
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Checkbox id="payment" checked={paymentDone} onCheckedChange={(v) => setPaymentDone(!!v)} />
@@ -105,7 +107,6 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
             </Button>
           </div>
 
-          {/* Forms checklist item */}
           {formsStatus.total > 0 && (
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -148,4 +149,9 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
       </DialogContent>
     </Dialog>
   );
+}
+
+function FinalizationPatientName({ patientId }: { patientId: string }) {
+  const { data: patient } = usePatientById(patientId);
+  return <p className="text-sm font-bold">{patient ? formatPatientName(patient) : 'Necunoscut'}</p>;
 }

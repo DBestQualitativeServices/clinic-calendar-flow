@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useAppState } from '@/store/appStore';
-import { formTemplates } from '@/data/mock';
+import { useTabletSessionByCode, useFormTemplates, useSubmitForm } from '@/hooks/mock';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,9 +15,10 @@ export default function TabletFormView() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get('code') || '';
   const navigate = useNavigate();
-  const { tabletSessions, addCompletedForm } = useAppState();
+  const { data: sessionData } = useTabletSessionByCode(code);
+  const { data: formTemplates } = useFormTemplates();
+  const { mutate: submitForm } = useSubmitForm();
 
-  const session = tabletSessions.find(s => s.accessCode === code && s.active);
   const template = formTemplates.find(t => t.id === templateId);
 
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -26,7 +26,7 @@ export default function TabletFormView() {
     new Array(template?.signatureCount || 1).fill(null)
   );
 
-  if (!session || !template) {
+  if (!sessionData || !template) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -37,11 +37,12 @@ export default function TabletFormView() {
     );
   }
 
+  const { session } = sessionData;
+
   const setAnswer = (qId: string, value: unknown) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
   };
 
-  // Validate
   const isValid = useMemo(() => {
     const allRequiredAnswered = template.questions
       .filter(q => q.required)
@@ -72,7 +73,7 @@ export default function TabletFormView() {
       appointmentId: session.appointmentId,
     };
 
-    addCompletedForm(form);
+    submitForm(form);
     toast({ title: 'Formular trimis cu succes!' });
     navigate(`/tablet/forms?code=${code}`);
   };
@@ -83,7 +84,6 @@ export default function TabletFormView() {
 
   return (
     <div className="min-h-screen flex flex-col max-w-lg mx-auto">
-      {/* Fixed header */}
       <div className="sticky top-0 z-10 bg-slate-50 border-b border-border px-6 py-4 flex items-center gap-3">
         <Button
           variant="ghost"
@@ -95,7 +95,6 @@ export default function TabletFormView() {
         <h1 className="text-lg font-bold text-slate-800 truncate">{template.title}</h1>
       </div>
 
-      {/* Scrollable content */}
       <div className="flex-1 overflow-auto px-6 py-6 space-y-8">
         {template.questions.map(q => (
           <div key={q.id} className="space-y-3">
@@ -144,7 +143,6 @@ export default function TabletFormView() {
           </div>
         ))}
 
-        {/* Signatures */}
         {signatureLabels.map((label, idx) => (
           <SignatureCanvas
             key={idx}
@@ -160,7 +158,6 @@ export default function TabletFormView() {
         ))}
       </div>
 
-      {/* Submit button */}
       <div className="sticky bottom-0 bg-slate-50 border-t border-border px-6 py-4">
         <Button
           onClick={handleSubmit}

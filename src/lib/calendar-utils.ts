@@ -1,21 +1,7 @@
-import { patients, consultationTypes, categories } from '@/data/mock';
-import type { Appointment } from '@/types';
+// calendar-utils.ts — Pure functions, NO import from data/mock.ts
 
-export function getPatientName(patientId: string): string {
-  const p = patients.find(p => p.id === patientId);
-  return p ? `${p.lastName} ${p.firstName}` : 'Necunoscut';
-}
-
-export function getConsultationName(typeId: string): string {
-  return consultationTypes.find(c => c.id === typeId)?.name ?? typeId;
-}
-
-export function getCategoryName(catId: string): string {
-  return categories.find(c => c.id === catId)?.name ?? catId;
-}
-
-export function getCategoryColor(catId: string): string {
-  return categories.find(c => c.id === catId)?.color ?? 'spec-generala';
+export function formatPatientName(patient: { firstName: string; lastName: string }): string {
+  return `${patient.lastName} ${patient.firstName}`;
 }
 
 export function formatDuration(minutes: number): string {
@@ -26,10 +12,12 @@ export function formatDuration(minutes: number): string {
   return `${h}h${m}m`;
 }
 
-export function getConsultationsSummary(apt: Appointment): string {
-  return apt.patients
-    .flatMap(p => p.consultations)
-    .map(c => getConsultationName(c.consultationTypeId))
+export function getConsultationsSummary(
+  consultations: { consultationTypeId: string; durationMinutes: number }[],
+  consultationTypes: { id: string; name: string }[]
+): string {
+  return consultations
+    .map(c => consultationTypes.find(ct => ct.id === c.consultationTypeId)?.name ?? c.consultationTypeId)
     .join(' + ');
 }
 
@@ -49,7 +37,7 @@ export function minutesToTime(minutes: number): string {
 /** Generate time slots from 08:00 to 18:00 in 30-min increments */
 export function generateTimeSlots(): string[] {
   const slots: string[] = [];
-  for (let m = 480; m < 1080; m += 30) { // 08:00 to 17:30
+  for (let m = 480; m < 1080; m += 30) {
     slots.push(minutesToTime(m));
   }
   return slots;

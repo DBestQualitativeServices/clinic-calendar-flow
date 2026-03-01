@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-import { useAppState } from '@/store/appStore';
-import { formTemplates } from '@/data/mock';
-import { getConsultationName } from '@/lib/calendar-utils';
-import { patients as allPatients } from '@/data/mock';
+import React from 'react';
+import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient, useCreateTabletSession, useRemoveTabletSession } from '@/hooks/mock';
+import { useMockData } from '@/hooks/mock/MockDataProvider';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -14,8 +12,13 @@ interface FormsStatusPanelProps {
 }
 
 export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProps) {
-  const { appointments, completedForms, tabletSessions, addTabletSession, removeTabletSession, getFormsStatusForPatient } = useAppState();
-  const apt = appointments.find(a => a.id === appointmentId);
+  const { data: apt } = useAppointmentById(appointmentId);
+  const { data: formTemplates } = useFormTemplates();
+  const { completedForms, tabletSessions } = useMockData();
+  const getFormsStatusForPatient = useFormsStatusForPatient();
+  const { mutate: addTabletSession } = useCreateTabletSession();
+  const { mutate: removeTabletSession } = useRemoveTabletSession();
+
   if (!apt) return null;
 
   const now = new Date().toISOString();
@@ -45,7 +48,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
 
     return (
       <div className="space-y-3">
-        {/* Form list */}
         {status.requiredTemplateIds.map(tid => {
           const template = formTemplates.find(t => t.id === tid);
           if (!template) return null;
@@ -85,7 +87,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
           <p className="text-xs text-muted-foreground">Niciun formular necesar.</p>
         )}
 
-        {/* Tablet access code */}
         <div className="pt-2 border-t border-border">
           {session ? (
             <div className="flex items-center gap-3">
@@ -116,14 +117,9 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
       {multiPatient ? (
         <Tabs defaultValue={apt.patients[0].patientId}>
           <TabsList className="h-8">
-            {apt.patients.map(ap => {
-              const pat = allPatients.find(p => p.id === ap.patientId);
-              return (
-                <TabsTrigger key={ap.patientId} value={ap.patientId} className="text-xs">
-                  {pat ? `${pat.lastName} ${pat.firstName}` : ap.patientId}
-                </TabsTrigger>
-              );
-            })}
+            {apt.patients.map(ap => (
+              <PatientTab key={ap.patientId} patientId={ap.patientId} />
+            ))}
           </TabsList>
           {apt.patients.map(ap => (
             <TabsContent key={ap.patientId} value={ap.patientId}>
@@ -138,5 +134,14 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
         )
       )}
     </div>
+  );
+}
+
+function PatientTab({ patientId }: { patientId: string }) {
+  const { data: patient } = usePatientById(patientId);
+  return (
+    <TabsTrigger value={patientId} className="text-xs">
+      {patient ? `${patient.lastName} ${patient.firstName}` : patientId}
+    </TabsTrigger>
   );
 }

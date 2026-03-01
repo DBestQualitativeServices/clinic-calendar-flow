@@ -4,19 +4,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { useAppState } from '@/store/appStore';
+import { useUIState } from '@/store/uiStore';
+import { useCreateBlockedSlot } from '@/hooks/mock';
 import { minutesToTime, timeToMinutes } from '@/lib/calendar-utils';
 import { toast } from '@/hooks/use-toast';
 
 interface EmptySlotPopoverProps {
   doctorId: string;
   date: string;
-  startTime: string; // HH:mm
+  startTime: string;
   children: React.ReactNode;
 }
 
 export default function EmptySlotPopover({ doctorId, date, startTime, children }: EmptySlotPopoverProps) {
-  const { addTimeBlock, setActivePanel } = useAppState();
+  const { setActivePanel } = useUIState();
+  const { mutate: addTimeBlock } = useCreateBlockedSlot();
   const [open, setOpen] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
   const [blockDuration, setBlockDuration] = useState('30');
@@ -30,7 +32,7 @@ export default function EmptySlotPopover({ doctorId, date, startTime, children }
   const handleBlock = () => {
     let durationMin = parseInt(blockDuration);
     if (blockDuration === 'rest') {
-      durationMin = 1080 - timeToMinutes(startTime); // until 18:00
+      durationMin = 1080 - timeToMinutes(startTime);
     }
     addTimeBlock({
       id: `tb-${Date.now()}`,

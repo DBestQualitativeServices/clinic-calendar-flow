@@ -1,8 +1,6 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAppState } from '@/store/appStore';
-import { patients as allPatients, doctors, formTemplates, consultFormRequirements } from '@/data/mock';
-import { getConsultationName } from '@/lib/calendar-utils';
+import { useTabletSessionByCode, useDoctors, useFormTemplates } from '@/hooks/mock';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Check, LogOut, RefreshCw } from 'lucide-react';
 
@@ -10,10 +8,11 @@ export default function TabletFormsList() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get('code') || '';
   const navigate = useNavigate();
-  const { tabletSessions, appointments, completedForms } = useAppState();
+  const { data: sessionData } = useTabletSessionByCode(code);
+  const { data: doctors } = useDoctors();
+  const { data: formTemplates } = useFormTemplates();
 
-  const session = tabletSessions.find(s => s.accessCode === code && s.active);
-  if (!session) {
+  if (!sessionData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -24,45 +23,19 @@ export default function TabletFormsList() {
     );
   }
 
-  const apt = appointments.find(a => a.id === session.appointmentId);
-  const patient = allPatients.find(p => p.id === session.patientId);
-  const doctor = apt ? doctors.find(d => d.id === apt.doctorId) : null;
-
-  const now = new Date().toISOString();
-
-  // Compute required forms for this patient based on appointment consultations
-  const requiredTemplateIds = useMemo(() => {
-    if (!apt) return [];
-    const ap = apt.patients.find(p => p.patientId === session.patientId);
-    if (!ap) return [];
-    const ids = new Set<string>();
-    ap.consultations.forEach(c => {
-      const name = getConsultationName(c.consultationTypeId);
-      (consultFormRequirements[name] || []).forEach(id => ids.add(id));
-    });
-    return [...ids];
-  }, [apt, session.patientId]);
-
-  const pendingForms = requiredTemplateIds.filter(tid => {
-    const latest = completedForms
-      .filter(f => f.patientId === session.patientId && f.formTemplateId === tid)
-      .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
-    return !latest || latest.expiresAt <= now;
-  });
-
-  const completedFormIds = requiredTemplateIds.filter(tid => !pendingForms.includes(tid));
+  const { session, appointment, patient, pendingForms, completedFormIds } = sessionData;
+  const doctor = appointment ? doctors.find(d => d.id === appointment.doctorId) : null;
 
   return (
     <div className="min-h-screen flex flex-col px-6 py-8 max-w-lg mx-auto">
-      {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
             Bună, {patient?.firstName || 'Pacient'}
           </h1>
-          {apt && doctor && (
+          {appointment && doctor && (
             <p className="text-base text-slate-500 mt-1">
-              Programare la {doctor.name}, {apt.date}
+              Programare la {doctor.name}, {appointment.date}
             </p>
           )}
         </div>
@@ -71,7 +44,6 @@ export default function TabletFormsList() {
         </Button>
       </div>
 
-      {/* Pending */}
       {pendingForms.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-slate-700 mb-3">De completat</h2>
@@ -97,7 +69,6 @@ export default function TabletFormsList() {
         </div>
       )}
 
-      {/* Completed */}
       {completedFormIds.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-slate-700 mb-3">Completate</h2>

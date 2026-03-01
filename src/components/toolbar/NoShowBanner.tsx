@@ -1,57 +1,61 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '@/store/appStore';
-import { getPatientName } from '@/lib/calendar-utils';
-import { doctors } from '@/data/mock';
+import { useUnresolvedAppointments, useDoctors, usePatientById, useMarkNoShow, useUpdateAppointmentStatus, useCompleteAppointment } from '@/hooks/mock';
+import { useUIState } from '@/store/uiStore';
+import { formatPatientName } from '@/lib/calendar-utils';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { AlertTriangle, ChevronDown, ChevronUp, X, RotateCcw, CheckCircle } from 'lucide-react';
 
-export default function NoShowBanner() {
-  const { appointments, updateAppointment, setActivePanel } = useAppState();
-  const [expanded, setExpanded] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+function NoShowRow({ apt }: { apt: import('@/types').Appointment }) {
+  const { data: doctors } = useDoctors();
+  const { data: patient } = usePatientById(apt.patients[0]?.patientId);
+  const { mutate: markNoShow } = useMarkNoShow();
+  const { mutate: complete } = useCompleteAppointment();
+  const { setActivePanel } = useUIState();
 
-  // Find previous-day unresolved appointments (programat/sosit that weren't finalized/cancelled)
-  const unresolvedApts = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return appointments.filter(apt => {
-      const aptDate = new Date(apt.date + 'T00:00:00');
-      return aptDate < today && (apt.status === 'programat' || apt.status === 'sosit' || apt.status === 'in_consult');
-    });
-  }, [appointments]);
+  const doctor = doctors.find(d => d.id === apt.doctorId);
+  const patientName = patient ? formatPatientName(patient) : 'Necunoscut';
 
-  if (unresolvedApts.length === 0 || dismissed) return null;
-
-  const now = new Date().toISOString();
-
-  const handleNoShow = (id: string) => {
-    const apt = appointments.find(a => a.id === id)!;
-    updateAppointment(id, {
-      status: 'no_show',
-      timeline: [...apt.timeline, { timestamp: now, action: 'Marcat no-show', actor: 'Recepție' }],
-    });
+  const handleNoShow = () => {
+    markNoShow({ appointmentId: apt.id });
     toast({ title: 'Marcat ca no-show' });
   };
 
-  const handleWasPresent = (id: string) => {
-    const apt = appointments.find(a => a.id === id)!;
-    updateAppointment(id, {
-      status: 'finalizat',
-      timeline: [...apt.timeline, { timestamp: now, action: 'Finalizat (retroactiv)', actor: 'Recepție' }],
-    });
+  const handleWasPresent = () => {
+    complete({ appointmentId: apt.id });
     toast({ title: 'Marcat ca prezent' });
   };
 
-  const handleReschedule = (id: string) => {
-    const apt = appointments.find(a => a.id === id)!;
-    updateAppointment(id, {
-      status: 'no_show',
-      timeline: [...apt.timeline, { timestamp: now, action: 'No-show → Reprogramare', actor: 'Recepție' }],
-    });
+  const handleReschedule = () => {
+    markNoShow({ appointmentId: apt.id });
     setActivePanel({ type: 'booking', prefill: { appointment: apt } });
   };
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-card border border-border text-xs">
+      <div className="flex-1 min-w-0">
+        <span className="font-semibold">{patientName}</span>
+        <span className="text-muted-foreground ml-1.5">{apt.date} · {apt.startTime || 'Walk-in'} · {doctor?.name}</span>
+      </div>
+      <Button variant="destructive" size="sm" className="h-6 text-[11px] gap-1" onClick={handleNoShow}>
+        No-show
+      </Button>
+      <Button variant="outline" size="sm" className="h-6 text-[11px] gap-1" onClick={handleWasPresent}>
+        <CheckCircle className="h-3 w-3" /> Prezent
+      </Button>
+      <Button variant="outline" size="sm" className="h-6 text-[11px] gap-1" onClick={handleReschedule}>
+        <RotateCcw className="h-3 w-3" /> Reprogramează
+      </Button>
+    </div>
+  );
+}
+
+export default function NoShowBanner() {
+  const { data: unresolvedApts } = useUnresolvedAppointments();
+  const [expanded, setExpanded] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  if (unresolvedApts.length === 0 || dismissed) return null;
 
   return (
     <div className="bg-destructive/10 border-b border-destructive/20">
@@ -71,26 +75,9 @@ export default function NoShowBanner() {
 
       {expanded && (
         <div className="px-4 pb-3 space-y-2">
-          {unresolvedApts.map(apt => {
-            const doctor = doctors.find(d => d.id === apt.doctorId);
-            return (
-              <div key={apt.id} className="flex items-center gap-2 px-3 py-2 rounded-md bg-card border border-border text-xs">
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold">{getPatientName(apt.patients[0]?.patientId)}</span>
-                  <span className="text-muted-foreground ml-1.5">{apt.date} · {apt.startTime || 'Walk-in'} · {doctor?.name}</span>
-                </div>
-                <Button variant="destructive" size="sm" className="h-6 text-[11px] gap-1" onClick={() => handleNoShow(apt.id)}>
-                  No-show
-                </Button>
-                <Button variant="outline" size="sm" className="h-6 text-[11px] gap-1" onClick={() => handleWasPresent(apt.id)}>
-                  <CheckCircle className="h-3 w-3" /> Prezent
-                </Button>
-                <Button variant="outline" size="sm" className="h-6 text-[11px] gap-1" onClick={() => handleReschedule(apt.id)}>
-                  <RotateCcw className="h-3 w-3" /> Reprogramează
-                </Button>
-              </div>
-            );
-          })}
+          {unresolvedApts.map(apt => (
+            <NoShowRow key={apt.id} apt={apt} />
+          ))}
         </div>
       )}
     </div>

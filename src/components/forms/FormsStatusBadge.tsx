@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppState } from '@/store/appStore';
+import { useFormsStatus } from '@/hooks/mock';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 
@@ -9,8 +9,7 @@ interface FormsStatusBadgeProps {
 }
 
 export default function FormsStatusBadge({ appointmentId, className }: FormsStatusBadgeProps) {
-  const { getFormsStatus } = useAppState();
-  const status = getFormsStatus(appointmentId);
+  const { data: status } = useFormsStatus(appointmentId);
 
   if (status.total === 0) return null;
 

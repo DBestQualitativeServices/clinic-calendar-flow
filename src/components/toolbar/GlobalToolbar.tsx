@@ -5,12 +5,14 @@ import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { useAppState } from '@/store/appStore';
-import { categories, doctors } from '@/data/mock';
+import { useUIState } from '@/store/uiStore';
+import { useCategories, useDoctors } from '@/hooks/mock';
 import { cn } from '@/lib/utils';
 
 export default function GlobalToolbar() {
-  const { calendar, setCalendar, setActivePanel } = useAppState();
+  const { calendar, setCalendar, setActivePanel } = useUIState();
+  const { data: categories } = useCategories();
+  const { data: doctors } = useDoctors();
   const currentDate = new Date(calendar.selectedDate + 'T00:00:00');
 
   const navigateDay = (dir: number) => {
@@ -23,7 +25,6 @@ export default function GlobalToolbar() {
 
   return (
     <div className="flex items-center justify-between px-5 py-2.5 bg-card border-b border-border shadow-sm">
-      {/* Left: Logo + New appointment */}
       <div className="flex items-center gap-4">
         <span className="text-lg font-bold text-primary tracking-tight">PolBine</span>
         <Button
@@ -36,7 +37,6 @@ export default function GlobalToolbar() {
         </Button>
       </div>
 
-      {/* Center: Specialty filter + weekly indicator */}
       <div className="flex items-center gap-3">
         {weeklyDoctor && (
           <div className="flex items-center gap-2 mr-2">
@@ -81,7 +81,6 @@ export default function GlobalToolbar() {
         </div>
       </div>
 
-      {/* Right: Date navigation */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(-1)}>
           <ChevronLeft className="h-4 w-4" />

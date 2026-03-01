@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAppState } from '@/store/appStore';
-import { getPatientName, getConsultationName, formatDuration } from '@/lib/calendar-utils';
-import { doctors, patients } from '@/data/mock';
+import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useUpdateAppointmentStatus } from '@/hooks/mock';
+import { useUIState } from '@/store/uiStore';
+import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -20,10 +20,34 @@ const statusBadge: Record<string, { label: string; cls: string }> = {
   no_show: { label: 'No-show', cls: 'bg-status-no-show text-white' },
 };
 
+function PatientBlock({ patientId, consultations }: { patientId: string; consultations: { consultationTypeId: string; durationMinutes: number }[] }) {
+  const { data: patient } = usePatientById(patientId);
+  const { data: consultationTypes } = useConsultationTypes();
+
+  return (
+    <div className="p-3 rounded-md bg-accent/50 border border-border space-y-1.5">
+      <p className="text-sm font-bold">{patient ? `${patient.lastName} ${patient.firstName}` : patientId}</p>
+      <p className="text-xs text-muted-foreground">{patient?.phone} · {patient?.dateOfBirth}</p>
+      {consultations.map((c, ci) => {
+        const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
+        return (
+          <div key={ci} className="flex items-center justify-between text-xs">
+            <span>{ct?.name || c.consultationTypeId}</span>
+            <span className="text-muted-foreground">{formatDuration(c.durationMinutes)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function AppointmentDetailsPanel({ appointmentId }: { appointmentId: string }) {
-  const { appointments, updateAppointment, setActivePanel } = useAppState();
+  const { data: apt } = useAppointmentById(appointmentId);
+  const { data: doctors } = useDoctors();
+  const { mutate: updateStatus } = useUpdateAppointmentStatus();
+  const { setActivePanel } = useUIState();
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
-  const apt = appointments.find(a => a.id === appointmentId);
+
   if (!apt) return <p className="text-sm text-muted-foreground p-4">Programarea nu a fost găsită.</p>;
 
   const doctor = doctors.find(d => d.id === apt.doctorId);
@@ -31,50 +55,37 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   const now = new Date().toISOString();
 
   const transition = (status: AppointmentStatus, action: string) => {
-    updateAppointment(apt.id, {
-      status,
-      timeline: [...apt.timeline, { timestamp: now, action, actor: 'Recepție' }],
+    updateStatus({
+      appointmentId: apt.id,
+      update: {
+        status,
+        timeline: [...apt.timeline, { timestamp: now, action, actor: 'Recepție' }],
+      },
     });
     toast({ title: `Status schimbat: ${statusBadge[status].label}` });
   };
 
   return (
     <div className="space-y-5">
-      {/* Status */}
       <div className="flex items-center justify-between">
         <span className={cn('text-xs px-3 py-1 rounded-full font-semibold', badge.cls)}>{badge.label}</span>
         <span className="text-xs text-muted-foreground">{apt.date} · {apt.startTime || 'Walk-in'}</span>
       </div>
 
-      {/* Doctor */}
       <div>
         <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Doctor</p>
         <p className="text-sm font-semibold">{doctor?.name}</p>
       </div>
 
-      {/* Patients & consultations */}
-      {apt.patients.map((ap, idx) => {
-        const pat = patients.find(p => p.id === ap.patientId);
-        return (
-          <div key={idx} className="p-3 rounded-md bg-accent/50 border border-border space-y-1.5">
-            <p className="text-sm font-bold">{pat ? `${pat.lastName} ${pat.firstName}` : ap.patientId}</p>
-            <p className="text-xs text-muted-foreground">{pat?.phone} · {pat?.dateOfBirth}</p>
-            {ap.consultations.map((c, ci) => (
-              <div key={ci} className="flex items-center justify-between text-xs">
-                <span>{getConsultationName(c.consultationTypeId)}</span>
-                <span className="text-muted-foreground">{formatDuration(c.durationMinutes)}</span>
-              </div>
-            ))}
-          </div>
-        );
-      })}
+      {apt.patients.map((ap, idx) => (
+        <PatientBlock key={idx} patientId={ap.patientId} consultations={ap.consultations} />
+      ))}
 
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">Durată totală</span>
         <span className="font-bold text-primary">{formatDuration(apt.totalDurationMinutes)}</span>
       </div>
 
-      {/* Timeline */}
       <div>
         <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Istoric</p>
         <div className="space-y-1.5">
@@ -91,21 +102,23 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
         </div>
       </div>
 
-      {/* Forms */}
       <FormsStatusPanel appointmentId={apt.id} />
 
-      {/* Notes */}
       <div>
         <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Note</p>
         <Textarea
           className="text-xs min-h-[60px]"
           placeholder="Adaugă observații..."
           value={apt.notes || ''}
-          onChange={e => updateAppointment(apt.id, { notes: e.target.value })}
+          onChange={e =>
+            updateStatus({
+              appointmentId: apt.id,
+              update: { notes: e.target.value },
+            })
+          }
         />
       </div>
 
-      {/* Primary action */}
       <div className="space-y-2 pt-2 border-t border-border">
         {apt.status === 'programat' && (
           <Button className="w-full gap-2" onClick={() => transition('sosit', 'Check-in')}>
@@ -130,9 +143,7 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
           </Button>
         )}
         {(apt.status === 'programat' || apt.status === 'sosit') && (
-          <Button variant="ghost" className="w-full gap-2 text-xs text-destructive" onClick={() => {
-            transition('anulat', 'Anulat');
-          }}>
+          <Button variant="ghost" className="w-full gap-2 text-xs text-destructive" onClick={() => transition('anulat', 'Anulat')}>
             <X className="h-3.5 w-3.5" /> Anulează
           </Button>
         )}

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '@/store/appStore';
-import { patients as allPatients, formTemplates } from '@/data/mock';
+import { usePatients, useFormTemplates, useCompletedForms } from '@/hooks/mock';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,37 +8,29 @@ import { Search, FileText } from 'lucide-react';
 type FilterType = 'all' | 'valid' | 'expired';
 
 export default function FormsPage() {
-  const { completedForms } = useAppState();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
 
-  const searchResults = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
-    const q = searchQuery.toLowerCase();
-    return allPatients.filter(p =>
-      `${p.lastName} ${p.firstName}`.toLowerCase().includes(q) ||
-      p.phone.includes(q) ||
-      p.cnp?.includes(q)
-    ).slice(0, 8);
-  }, [searchQuery]);
+  const { data: searchResults } = usePatients(searchQuery);
+  const filteredSearchResults = useMemo(() => (searchQuery.length >= 2 && !selectedPatientId ? searchResults.slice(0, 8) : []), [searchResults, searchQuery, selectedPatientId]);
+
+  const { data: formTemplates } = useFormTemplates();
+  const { data: patientForms } = useCompletedForms(selectedPatientId || '');
 
   const now = new Date().toISOString();
 
-  const patientForms = useMemo(() => {
-    if (!selectedPatientId) return [];
-    return completedForms
-      .filter(f => f.patientId === selectedPatientId)
-      .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
-  }, [selectedPatientId, completedForms]);
+  const sortedForms = useMemo(() =>
+    [...patientForms].sort((a, b) => b.completedAt.localeCompare(a.completedAt)),
+  [patientForms]);
 
   const filteredForms = useMemo(() => {
-    if (filter === 'all') return patientForms;
-    if (filter === 'valid') return patientForms.filter(f => f.expiresAt > now);
-    return patientForms.filter(f => f.expiresAt <= now);
-  }, [patientForms, filter, now]);
+    if (filter === 'all') return sortedForms;
+    if (filter === 'valid') return sortedForms.filter(f => f.expiresAt > now);
+    return sortedForms.filter(f => f.expiresAt <= now);
+  }, [sortedForms, filter, now]);
 
-  const selectedPatient = allPatients.find(p => p.id === selectedPatientId);
+  const selectedPatient = searchResults.find(p => p.id === selectedPatientId);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -51,7 +42,6 @@ export default function FormsPage() {
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
-        {/* Search */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -60,9 +50,9 @@ export default function FormsPage() {
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); if (e.target.value.length < 2) setSelectedPatientId(null); }}
           />
-          {searchResults.length > 0 && !selectedPatientId && (
+          {filteredSearchResults.length > 0 && (
             <div className="absolute z-10 top-full mt-1 w-full border border-border rounded-md bg-popover shadow-lg overflow-hidden">
-              {searchResults.map(p => (
+              {filteredSearchResults.map(p => (
                 <button
                   key={p.id}
                   className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors"

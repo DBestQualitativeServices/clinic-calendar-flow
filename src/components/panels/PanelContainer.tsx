@@ -1,12 +1,12 @@
 import React from 'react';
-import { useAppState } from '@/store/appStore';
+import { useUIState } from '@/store/uiStore';
 import SlideInPanel from './SlideInPanel';
 import BookingPanel from './BookingPanel';
 import AppointmentDetailsPanel from './AppointmentDetailsPanel';
 import PatientFormPanel from './PatientFormPanel';
 
 export default function PanelContainer() {
-  const { activePanel, setActivePanel } = useAppState();
+  const { activePanel, setActivePanel } = useUIState();
   const close = () => setActivePanel({ type: 'none' });
   const isOpen = activePanel.type !== 'none';
 
