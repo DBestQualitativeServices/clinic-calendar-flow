@@ -1,0 +1,58 @@
+import React from 'react';
+import type { Appointment } from '@/types';
+import { getPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
+import { cn } from '@/lib/utils';
+
+interface AppointmentCardProps {
+  appointment: Appointment;
+  slotHeight: number; // px per 30 min
+}
+
+const statusStyles: Record<string, string> = {
+  programat: 'bg-status-programat text-white',
+  sosit: 'bg-status-sosit text-white animate-status-pulse',
+  in_consult: 'bg-status-in-consult text-white',
+  finalizat: 'bg-status-finalizat/50 text-foreground',
+  anulat: 'bg-status-anulat/40 text-foreground',
+  no_show: 'bg-status-no-show text-white',
+};
+
+export default function AppointmentCard({ appointment, slotHeight }: AppointmentCardProps) {
+  const heightPx = Math.max((appointment.totalDurationMinutes / 30) * slotHeight, slotHeight * 0.5);
+  const patientCount = appointment.patients.length;
+  const primaryPatient = getPatientName(appointment.patients[0]?.patientId);
+  const consultsSummary = getConsultationsSummary(appointment);
+
+  return (
+    <div
+      className={cn(
+        "absolute left-1 right-1 rounded-md px-2 py-1 cursor-pointer overflow-hidden transition-shadow hover:shadow-md border border-white/20",
+        statusStyles[appointment.status] ?? 'bg-muted',
+        appointment.status === 'anulat' && '[&_.patient-name]:line-through'
+      )}
+      style={{ height: `${heightPx}px` }}
+      title={`${primaryPatient} — ${consultsSummary}`}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <span className="patient-name text-xs font-semibold truncate leading-tight">
+          {primaryPatient}
+        </span>
+        {patientCount > 1 && (
+          <span className="flex-shrink-0 bg-white/30 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+            {patientCount}
+          </span>
+        )}
+      </div>
+      {heightPx > 28 && (
+        <p className="text-[10px] leading-tight opacity-90 truncate mt-0.5">
+          {consultsSummary}
+        </p>
+      )}
+      {heightPx > 42 && (
+        <p className="text-[10px] opacity-70 mt-0.5 text-right">
+          {formatDuration(appointment.totalDurationMinutes)}
+        </p>
+      )}
+    </div>
+  );
+}
