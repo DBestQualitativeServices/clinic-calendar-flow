@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { Doctor, Appointment, TimeBlock } from '@/types';
 import { categories } from '@/data/mock';
 import { useAppState } from '@/store/appStore';
@@ -18,6 +18,46 @@ interface DoctorColumnProps {
 
 const SLOT_HEIGHT = 60;
 
+/** Compute overlap layout: assigns left offset and width fraction to each card */
+function computeOverlapLayout(appointments: Appointment[]): Map<string, { left: number; width: number }> {
+  const layout = new Map<string, { left: number; width: number }>();
+  const sorted = [...appointments].sort((a, b) => timeToMinutes(a.startTime!) - timeToMinutes(b.startTime!));
+  
+  // Group overlapping appointments
+  const groups: Appointment[][] = [];
+  for (const apt of sorted) {
+    const start = timeToMinutes(apt.startTime!);
+    const end = start + apt.totalDurationMinutes;
+    
+    let placed = false;
+    for (const group of groups) {
+      const groupOverlaps = group.some(g => {
+        const gs = timeToMinutes(g.startTime!);
+        const ge = gs + g.totalDurationMinutes;
+        return start < ge && end > gs;
+      });
+      if (groupOverlaps) {
+        group.push(apt);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) groups.push([apt]);
+  }
+
+  for (const group of groups) {
+    const count = group.length;
+    group.forEach((apt, i) => {
+      layout.set(apt.id, {
+        left: i / count,
+        width: 1 / count,
+      });
+    });
+  }
+
+  return layout;
+}
+
 export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHeight, timeSlots }: DoctorColumnProps) {
   const { setCalendar, calendar } = useAppState();
 
@@ -29,6 +69,13 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
   const handleDoubleClick = () => {
     setCalendar({ viewMode: 'weekly', selectedDoctorId: doctor.id });
   };
+
+  // Compute overlap layout for active appointments
+  const activeApts = useMemo(
+    () => appointments.filter(a => a.startTime && a.status !== 'anulat'),
+    [appointments]
+  );
+  const overlapLayout = useMemo(() => computeOverlapLayout(activeApts), [activeApts]);
 
   return (
     <div className="flex flex-col min-w-[180px] flex-1 max-w-[280px]">
@@ -69,7 +116,7 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
 
       {/* Time grid */}
       <div className="relative border-r border-border">
-        {/* Slot rows — each is clickable empty slot */}
+        {/* Slot rows */}
         {timeSlots.map((slot, i) => (
           <EmptySlotPopover key={slot} doctorId={doctor.id} date={calendar.selectedDate} startTime={slot}>
             <div
@@ -102,18 +149,25 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
           );
         })}
 
-        {/* Appointment cards */}
-        {appointments
-          .filter(a => a.startTime && a.status !== 'anulat')
-          .map(apt => {
-            const startMin = timeToMinutes(apt.startTime!) - 480;
-            const topPx = (startMin / 30) * slotHeight;
-            return (
-              <div key={apt.id} style={{ position: 'absolute', top: `${topPx}px`, left: 0, right: 0 }}>
-                <AppointmentCard appointment={apt} slotHeight={slotHeight} />
-              </div>
-            );
-          })}
+        {/* Appointment cards (with overlap layout) */}
+        {activeApts.map(apt => {
+          const startMin = timeToMinutes(apt.startTime!) - 480;
+          const topPx = (startMin / 30) * slotHeight;
+          const ol = overlapLayout.get(apt.id) || { left: 0, width: 1 };
+          return (
+            <div
+              key={apt.id}
+              style={{
+                position: 'absolute',
+                top: `${topPx}px`,
+                left: `${ol.left * 100}%`,
+                width: `${ol.width * 100}%`,
+              }}
+            >
+              <AppointmentCard appointment={apt} slotHeight={slotHeight} />
+            </div>
+          );
+        })}
 
         {/* Cancelled appointments (faded) */}
         {appointments

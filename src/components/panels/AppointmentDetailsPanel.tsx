@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppState } from '@/store/appStore';
 import { getPatientName, getConsultationName, formatDuration } from '@/lib/calendar-utils';
 import { doctors, patients } from '@/data/mock';
@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { LogIn, Play, CheckCircle, RotateCcw, X } from 'lucide-react';
 import type { AppointmentStatus } from '@/types';
+import FinalizationModal from '@/components/modals/FinalizationModal';
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
   programat: { label: 'Programat', cls: 'bg-status-programat text-white' },
@@ -20,6 +21,7 @@ const statusBadge: Record<string, { label: string; cls: string }> = {
 
 export default function AppointmentDetailsPanel({ appointmentId }: { appointmentId: string }) {
   const { appointments, updateAppointment, setActivePanel } = useAppState();
+  const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
   const apt = appointments.find(a => a.id === appointmentId);
   if (!apt) return <p className="text-sm text-muted-foreground p-4">Programarea nu a fost găsită.</p>;
 
@@ -112,10 +114,11 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
           </Button>
         )}
         {apt.status === 'in_consult' && (
-          <Button className="w-full gap-2" onClick={() => transition('finalizat', 'Finalizat')}>
+          <Button className="w-full gap-2" onClick={() => setFinalizeModalOpen(true)}>
             <CheckCircle className="h-4 w-4" /> Finalizează
           </Button>
         )}
+        <FinalizationModal appointmentId={apt.id} open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen} />
 
         {(apt.status === 'programat' || apt.status === 'no_show') && (
           <Button variant="outline" className="w-full gap-2 text-xs" onClick={() => setActivePanel({ type: 'booking', prefill: { appointment: apt } })}>
