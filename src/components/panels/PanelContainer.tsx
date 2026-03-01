@@ -3,6 +3,7 @@ import { useAppState } from '@/store/appStore';
 import SlideInPanel from './SlideInPanel';
 import BookingPanel from './BookingPanel';
 import AppointmentDetailsPanel from './AppointmentDetailsPanel';
+import PatientFormPanel from './PatientFormPanel';
 
 export default function PanelContainer() {
   const { activePanel, setActivePanel } = useAppState();
@@ -20,9 +21,10 @@ export default function PanelContainer() {
       {activePanel.type === 'booking' && <BookingPanel prefill={activePanel} />}
       {activePanel.type === 'details' && <AppointmentDetailsPanel appointmentId={activePanel.appointmentId} />}
       {activePanel.type === 'patientForm' && (
-        <div className="text-sm text-muted-foreground p-4">
-          Formular pacient complet — în curs de implementare.
-        </div>
+        <PatientFormPanel
+          patientId={activePanel.patientId}
+          onComplete={activePanel.onComplete}
+        />
       )}
     </SlideInPanel>
   );

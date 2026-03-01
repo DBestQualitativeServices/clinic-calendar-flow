@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Eye, LogIn, Play, RotateCcw, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import FinalizationModal from '@/components/modals/FinalizationModal';
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
   programat: { label: 'Programat', cls: 'bg-status-programat text-white' },
@@ -28,6 +29,7 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
   const { updateAppointment, setActivePanel } = useAppState();
   const [open, setOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
 
   const apt = appointment;
   const badge = statusBadge[apt.status];
@@ -63,9 +65,7 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
 
   const handleFinalize = () => {
     setOpen(false);
-    // TODO: Open finalization modal (Phase 11)
-    transition('finalizat', 'Finalizat');
-    toast({ title: 'Programarea a fost finalizată' });
+    setFinalizeModalOpen(true);
   };
 
   const handleCancel = () => {
@@ -171,6 +171,13 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Finalization modal */}
+      <FinalizationModal
+        appointmentId={apt.id}
+        open={finalizeModalOpen}
+        onOpenChange={setFinalizeModalOpen}
+      />
     </>
   );
 }

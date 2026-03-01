@@ -169,22 +169,39 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
         })),
       }));
 
-    const newApt: Appointment = {
-      id: `apt-${Date.now()}`,
-      doctorId,
-      date: selectedDate,
-      startTime: isWalkIn ? undefined : (selectedTime || undefined),
-      totalDurationMinutes: totalDuration,
-      patients: aptPatients,
-      status: 'programat',
-      isWalkIn: isWalkIn || undefined,
-      smsConfirmationSent: sendSms,
-      createdAt: new Date().toISOString(),
-      timeline: [{ timestamp: new Date().toISOString(), action: 'Creat', actor: 'Recepție' }],
-    };
+    const recurringGroupId = isRecurring ? `rg-${Date.now()}` : undefined;
+    const count = isRecurring ? Math.min(Math.max(parseInt(recurringCount) || 1, 1), 12) : 1;
+    const freqDays = recurringFreq === 'weekly' ? 7 : recurringFreq === 'biweekly' ? 14 : 30;
 
-    addAppointment(newApt);
-    toast({ title: 'Programare creată cu succes!' });
+    let createdCount = 0;
+    for (let i = 0; i < count; i++) {
+      const offsetDays = i * freqDays;
+      const aptDate = new Date(selectedDate + 'T00:00:00');
+      aptDate.setDate(aptDate.getDate() + offsetDays);
+      // Skip Sundays
+      if (aptDate.getDay() === 0) aptDate.setDate(aptDate.getDate() + 1);
+      const dateStr = aptDate.toISOString().split('T')[0];
+
+      const newApt: Appointment = {
+        id: `apt-${Date.now()}-${i}`,
+        doctorId,
+        date: dateStr,
+        startTime: isWalkIn ? undefined : (i === 0 ? (selectedTime || undefined) : (selectedTime || undefined)),
+        totalDurationMinutes: totalDuration,
+        patients: aptPatients,
+        status: 'programat',
+        isWalkIn: isWalkIn || undefined,
+        smsConfirmationSent: i === 0 ? sendSms : false,
+        createdAt: new Date().toISOString(),
+        timeline: [{ timestamp: new Date().toISOString(), action: i === 0 ? 'Creat' : `Creat (recurent ${i + 1}/${count})`, actor: 'Recepție' }],
+        recurringGroupId,
+      };
+
+      addAppointment(newApt);
+      createdCount++;
+    }
+
+    toast({ title: createdCount > 1 ? `${createdCount} programări recurente create!` : 'Programare creată cu succes!' });
     setActivePanel({ type: 'none' });
   };
 
