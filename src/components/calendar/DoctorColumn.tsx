@@ -5,7 +5,8 @@ import { useAppState } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 import { getCategoryColor } from '@/lib/calendar-utils';
 import AppointmentCard from './AppointmentCard';
-import { timeToMinutes } from '@/lib/calendar-utils';
+import EmptySlotPopover from './EmptySlotPopover';
+import { timeToMinutes, minutesToTime } from '@/lib/calendar-utils';
 
 interface DoctorColumnProps {
   doctor: Doctor;
@@ -15,13 +16,12 @@ interface DoctorColumnProps {
   timeSlots: string[];
 }
 
-const SLOT_HEIGHT = 60; // px per 30 min
+const SLOT_HEIGHT = 60;
 
 export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHeight, timeSlots }: DoctorColumnProps) {
-  const { setCalendar } = useAppState();
+  const { setCalendar, calendar } = useAppState();
 
-  // Calculate load
-  const totalSlots = 20; // 08:00-18:00 = 10h = 20 x 30min slots
+  const totalSlots = 20;
   const occupiedSlots = Math.ceil(
     appointments.filter(a => a.status !== 'anulat' && a.startTime).reduce((sum, a) => sum + a.totalDurationMinutes, 0) / 30
   );
@@ -53,7 +53,6 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
             </span>
           ))}
         </div>
-        {/* Load bar */}
         <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-primary rounded-full transition-all"
@@ -70,31 +69,28 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
 
       {/* Time grid */}
       <div className="relative border-r border-border">
-        {/* Slot rows */}
+        {/* Slot rows — each is clickable empty slot */}
         {timeSlots.map((slot, i) => (
-          <div
-            key={slot}
-            className="border-b border-border relative"
-            style={{ height: `${slotHeight}px` }}
-          >
-            {/* 15-min midline */}
-            <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/50" />
-            {/* Vacation overlay */}
-            {doctor.isOnVacation && (
-              <div className="absolute inset-0 bg-muted/30" />
-            )}
-          </div>
+          <EmptySlotPopover key={slot} doctorId={doctor.id} date={calendar.selectedDate} startTime={slot}>
+            <div
+              className="border-b border-border relative hover:bg-accent/30 transition-colors cursor-pointer"
+              style={{ height: `${slotHeight}px` }}
+            >
+              <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/50" />
+              {doctor.isOnVacation && <div className="absolute inset-0 bg-muted/30" />}
+            </div>
+          </EmptySlotPopover>
         ))}
 
         {/* Time blocks (hatched) */}
         {timeBlocks.map(tb => {
-          const startMin = timeToMinutes(tb.startTime) - 480; // offset from 08:00
+          const startMin = timeToMinutes(tb.startTime) - 480;
           const topPx = (startMin / 30) * slotHeight;
           const heightPx = (tb.durationMinutes / 30) * slotHeight;
           return (
             <div
               key={tb.id}
-              className="absolute left-0 right-0 pattern-hatch border border-status-blocked/30 rounded-sm flex items-center justify-center"
+              className="absolute left-0 right-0 pattern-hatch border border-status-blocked/30 rounded-sm flex items-center justify-center pointer-events-none"
               style={{ top: `${topPx}px`, height: `${heightPx}px` }}
             >
               {tb.reason && (
