@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useFormsStatus, useFormTemplates, useCompleteAppointment, useCreateTabletSession } from '@/hooks/data';
-import { useMockData } from '@/hooks/mock/MockDataProvider';
+import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useFormsStatus, useFormTemplates, useCompleteAppointment } from '@/hooks/data';
+import { useTabletCode } from '@/hooks/useTabletCode';
 import { useUIState } from '@/store/uiStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,9 +21,9 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   const { data: consultationTypes } = useConsultationTypes();
   const { data: formsStatus } = useFormsStatus(appointmentId);
   const { mutate: completeAppointment } = useCompleteAppointment();
-  const { mutate: addTabletSession } = useCreateTabletSession();
   const { setActivePanel } = useUIState();
-  const { tabletSessions, patients: allPatients } = useMockData();
+  const patientId = apt?.patients[0]?.patientId ?? '';
+  const { session, generate } = useTabletCode(appointmentId, patientId);
 
   const [documentsPrinted, setDocumentsPrinted] = useState(false);
 
@@ -32,8 +32,6 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   const doctor = doctors.find(d => d.id === apt.doctorId);
   const allConsultations = apt.patients.flatMap(p => p.consultations);
   const hasMissingForms = formsStatus && formsStatus.missingTemplateIds.length > 0;
-  const patientId = apt.patients[0]?.patientId;
-  const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
 
   const handleFinalize = () => {
     completeAppointment({ appointmentId: apt.id });
@@ -111,12 +109,7 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
                 variant="outline"
                 size="sm"
                 className="w-full text-xs gap-1.5"
-                onClick={() => {
-                  const p = allPatients.find(pt => pt.id === patientId);
-                  const code = p?.cnp ? p.cnp.slice(-4) : String(Math.floor(1000 + Math.random() * 9000));
-                  addTabletSession({ accessCode: code, appointmentId, patientId, active: true, createdAt: new Date().toISOString() });
-                  toast({ title: `Cod generat: ${code}` });
-                }}
+                onClick={generate}
               >
                 <Tablet className="h-3.5 w-3.5" /> Generează cod tabletă pentru completare
               </Button>
