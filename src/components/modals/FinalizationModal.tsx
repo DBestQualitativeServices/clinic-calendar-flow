@@ -85,16 +85,27 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
           </div>
         </div>
 
-        {/* Forms warning */}
+        {/* Forms warning with tablet code */}
         {hasMissingForms && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-semibold text-destructive">Formulare incomplete!</p>
-              <p className="text-[11px] text-destructive/80 mt-0.5">
-                {formsStatus.missingTemplateIds.length} formular(e) nu au fost completate. Finalizarea fără formulare complete poate genera probleme legale.
-              </p>
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-destructive">Formulare incomplete!</p>
+                <p className="text-[11px] text-destructive/80 mt-0.5">
+                  {formsStatus.missingTemplateIds.length} formular(e) nu au fost completate. Finalizarea fără formulare complete poate genera probleme legale.
+                </p>
+              </div>
             </div>
+            {session && (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/30">
+                <Tablet className="h-5 w-5 text-primary" />
+                <div>
+                  <span className="text-xl font-bold tracking-[0.3em] text-primary">{session.accessCode}</span>
+                  <p className="text-[9px] text-primary/60">Cod tabletă — completați formularele acum</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
