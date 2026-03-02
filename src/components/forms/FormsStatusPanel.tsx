@@ -97,13 +97,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
           <p className="text-xs text-muted-foreground">Niciun formular necesar.</p>
         )}
 
-        <div className="pt-2 border-t border-border">
-          {!session && (
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={generateCode}>
-              <Tablet className="h-3.5 w-3.5" /> Generează cod tabletă
-            </Button>
-          )}
-        </div>
       </div>
     );
   };
