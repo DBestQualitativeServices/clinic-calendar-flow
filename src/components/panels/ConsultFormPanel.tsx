@@ -63,13 +63,9 @@ export default function ConsultFormPanel({ appointmentId }: ConsultFormPanelProp
   return (
     <div className="space-y-5">
       {/* Header info */}
-      <div className="p-3 rounded-md bg-accent/50 border border-border space-y-1">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold">Scrisoare medicală</span>
-        </div>
-        <p className="text-xs text-muted-foreground">Pacient: {patientName}</p>
-        {consultNames && <p className="text-xs text-muted-foreground">Consultație: {consultNames}</p>}
+      <div className="flex items-center gap-2">
+        <FileText className="h-4 w-4 text-primary" />
+        <span className="text-sm font-bold">Scrisoare medicală</span>
       </div>
 
       {/* Question 1 */}
