@@ -1,18 +1,16 @@
 import React from 'react';
 import { format, addDays, subDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useUIState } from '@/store/uiStore';
-import { useCategories, useDoctors } from '@/hooks/data';
 import { cn } from '@/lib/utils';
 
 export default function GlobalToolbar() {
   const { calendar, setCalendar, setActivePanel } = useUIState();
-  const { data: categories } = useCategories();
-  const { data: doctors } = useDoctors();
   const currentDate = new Date(calendar.selectedDate + 'T00:00:00');
 
   const navigateDay = (dir: number) => {
@@ -21,7 +19,7 @@ export default function GlobalToolbar() {
   };
 
   const isToday = calendar.selectedDate === new Date().toISOString().split('T')[0];
-  const weeklyDoctor = calendar.viewMode === 'weekly' ? doctors.find(d => d.id === calendar.selectedDoctorId) : null;
+  const weeklyDoctor = calendar.viewMode === 'weekly' ? undefined : null;
 
   return (
     <div className="flex items-center justify-between px-5 py-2.5 bg-card border-b border-border shadow-sm">
@@ -37,47 +35,23 @@ export default function GlobalToolbar() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-3">
-        {weeklyDoctor && (
-          <div className="flex items-center gap-2 mr-2">
-            <span className="text-xs font-semibold text-primary">{weeklyDoctor.name}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCalendar({ viewMode: 'daily', selectedDoctorId: undefined })}
-              className="text-xs h-7"
-            >
-              ← Vedere zilnică
-            </Button>
-          </div>
-        )}
-
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setCalendar({ specialtyFilter: undefined })}
-            className={cn(
-              "px-3 py-1 rounded-full text-xs font-medium transition-colors",
-              !calendar.specialtyFilter
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            Toate
-          </button>
-          {categories.map(cat => (
+      <div className="flex items-center gap-2 flex-1 max-w-md mx-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Caută pacient, consultație, doctor..."
+            value={calendar.searchQuery ?? ''}
+            onChange={(e) => setCalendar({ searchQuery: e.target.value || undefined })}
+            className="pl-8 h-8 text-xs"
+          />
+          {calendar.searchQuery && (
             <button
-              key={cat.id}
-              onClick={() => setCalendar({ specialtyFilter: calendar.specialtyFilter === cat.id ? undefined : cat.id })}
-              className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
-                calendar.specialtyFilter === cat.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}
+              onClick={() => setCalendar({ searchQuery: undefined })}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              {cat.name}
+              <X className="h-3.5 w-3.5" />
             </button>
-          ))}
+          )}
         </div>
       </div>
 
