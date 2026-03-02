@@ -68,8 +68,11 @@ export default function PatientFormPanel({ patientId, onComplete }: PatientFormP
     }
 
     toast({ title: 'Datele pacientului au fost salvate!' });
-    onComplete?.();
-    setActivePanel({ type: 'none' });
+    if (onComplete) {
+      onComplete();
+    } else {
+      setActivePanel({ type: 'none' });
+    }
   };
 
   return (
