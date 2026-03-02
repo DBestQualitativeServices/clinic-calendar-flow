@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useFormsStatus, useFormTemplates, useCompleteAppointment } from '@/hooks/data';
+import { useMockData } from '@/hooks/mock/MockDataProvider';
 import { useUIState } from '@/store/uiStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Printer, CalendarPlus, Info, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Printer, CalendarPlus, Info, AlertTriangle, Tablet } from 'lucide-react';
 import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
 
 interface FinalizationModalProps {
@@ -21,6 +22,7 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   const { data: formsStatus } = useFormsStatus(appointmentId);
   const { mutate: completeAppointment } = useCompleteAppointment();
   const { setActivePanel } = useUIState();
+  const { tabletSessions } = useMockData();
 
   const [documentsPrinted, setDocumentsPrinted] = useState(false);
 
@@ -29,6 +31,8 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   const doctor = doctors.find(d => d.id === apt.doctorId);
   const allConsultations = apt.patients.flatMap(p => p.consultations);
   const hasMissingForms = formsStatus && formsStatus.missingTemplateIds.length > 0;
+  const patientId = apt.patients[0]?.patientId;
+  const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
 
   const handleFinalize = () => {
     completeAppointment({ appointmentId: apt.id });
@@ -57,9 +61,18 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
         </DialogHeader>
 
         <div className="rounded-lg bg-accent/50 border border-border p-3 space-y-1.5">
-          <FinalizationPatientName patientId={apt.patients[0]?.patientId} />
-          <p className="text-xs text-muted-foreground">{doctor?.name}</p>
-          <p className="text-xs text-muted-foreground">{apt.date} · {apt.startTime || 'Walk-in'} · {formatDuration(apt.totalDurationMinutes)}</p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <FinalizationPatientName patientId={patientId} />
+              <p className="text-xs text-muted-foreground">{apt.date} · {apt.startTime || 'Walk-in'} · {formatDuration(apt.totalDurationMinutes)}</p>
+            </div>
+            {session && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 border border-primary/30 flex-shrink-0">
+                <Tablet className="h-3.5 w-3.5 text-primary" />
+                <span className="text-sm font-bold tracking-widest text-primary">{session.accessCode}</span>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {allConsultations.map((c, i) => {
               const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
@@ -108,7 +121,7 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
               <Label className="text-sm font-medium">Programare următoare</Label>
             </div>
             <div className="rounded bg-muted/50 p-2.5 space-y-1">
-              <FinalizationPatientNameSmall patientId={apt.patients[0]?.patientId} />
+              <FinalizationPatientNameSmall patientId={patientId} />
               <p className="text-xs text-muted-foreground">Doctor: {doctor?.name}</p>
             </div>
             <div className="flex items-start gap-2 p-2 rounded bg-accent/30 border border-border">
