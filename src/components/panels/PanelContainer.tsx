@@ -4,6 +4,7 @@ import SlideInPanel from './SlideInPanel';
 import BookingPanel from './BookingPanel';
 import AppointmentDetailsPanel from './AppointmentDetailsPanel';
 import PatientFormPanel from './PatientFormPanel';
+import FormViewerPanel from './FormViewerPanel';
 
 export default function PanelContainer() {
   const { activePanel, setActivePanel } = useUIState();
@@ -14,6 +15,7 @@ export default function PanelContainer() {
     booking: 'Programare nouă',
     details: 'Detalii programare',
     patientForm: 'Completare date pacient',
+    formViewer: 'Vizualizare formular',
   };
 
   return (
@@ -25,6 +27,9 @@ export default function PanelContainer() {
           patientId={activePanel.patientId}
           onComplete={activePanel.onComplete}
         />
+      )}
+      {activePanel.type === 'formViewer' && (
+        <FormViewerPanel formId={activePanel.formId} patientId={activePanel.patientId} />
       )}
     </SlideInPanel>
   );
