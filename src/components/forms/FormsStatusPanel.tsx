@@ -14,7 +14,7 @@ interface FormsStatusPanelProps {
 export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProps) {
   const { data: apt } = useAppointmentById(appointmentId);
   const { data: formTemplates } = useFormTemplates();
-  const { completedForms, tabletSessions } = useMockData();
+  const { completedForms, tabletSessions, patients } = useMockData();
   const getFormsStatusForPatient = useFormsStatusForPatient();
   const { mutate: addTabletSession } = useCreateTabletSession();
   const { mutate: removeTabletSession } = useRemoveTabletSession();
@@ -29,7 +29,9 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
     const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
 
     const generateCode = () => {
-      const code = String(Math.floor(1000 + Math.random() * 9000));
+      // Use last 4 digits of patient's CNP as access code
+      const patient = patients.find(p => p.id === patientId);
+      const code = patient?.cnp ? patient.cnp.slice(-4) : String(Math.floor(1000 + Math.random() * 9000));
       addTabletSession({ accessCode: code, appointmentId, patientId, active: true, createdAt: new Date().toISOString() });
       toast({ title: `Cod generat: ${code}` });
     };

@@ -690,7 +690,7 @@ export const initialAppointments: Appointment[] = [
 // Receptia i-a dat codul 4821 la check-in
 export const initialTabletSessions: TabletSession[] = [
   {
-    accessCode: "4821",
+    accessCode: "0345",
     appointmentId: "apt-3",
     patientId: "p-3",
     active: true,
