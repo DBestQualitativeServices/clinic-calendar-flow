@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { usePatients, useCompletedForms } from '@/hooks/data';
+import { usePatients, useFormTemplates, useCompletedForms } from '@/hooks/data';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Search, Users, Phone, Calendar, AlertTriangle, FileText, ChevronRight } from 'lucide-react';
-import type { Patient, CompletedForm } from '@/types';
+import { Search, Users, Phone, Calendar, AlertTriangle, FileText, ChevronDown, ChevronRight, CreditCard } from 'lucide-react';
+import type { Patient, CompletedForm, FormTemplate } from '@/types';
 
 type FilterType = 'all' | 'incomplete' | 'with_forms' | 'no_forms';
 
@@ -18,60 +18,137 @@ function getAge(dob: string): number {
   return age;
 }
 
-function PatientRow({ patient, formCount, hasValidForms }: { patient: Patient; formCount: number; hasValidForms: boolean }) {
+function PatientRow({
+  patient,
+  forms,
+  templates,
+  now,
+}: {
+  patient: Patient;
+  forms: CompletedForm[];
+  templates: FormTemplate[];
+  now: string;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const validCount = forms.filter(f => f.expiresAt > now).length;
+  const expiredCount = forms.filter(f => f.expiresAt <= now).length;
 
   return (
-    <tr
-      className={cn(
-        'border-t border-border cursor-pointer transition-colors hover:bg-muted/40',
-        patient.isIncomplete && 'bg-destructive/5'
-      )}
-      onClick={() => setExpanded(!expanded)}
-    >
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-            {patient.lastName[0]}{patient.firstName[0]}
-          </div>
-          <div>
-            <span className="font-medium">{patient.lastName} {patient.firstName}</span>
-            {patient.isIncomplete && (
-              <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-destructive">
-                <AlertTriangle className="h-3 w-3" />
-                Incomplet
-              </span>
-            )}
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3 text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <Phone className="h-3.5 w-3.5" />
-          {patient.phone}
-        </div>
-      </td>
-      <td className="px-4 py-3 text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <Calendar className="h-3.5 w-3.5" />
-          {new Date(patient.dateOfBirth).toLocaleDateString('ro-RO')}
-          <span className="text-xs opacity-60">({getAge(patient.dateOfBirth)} ani)</span>
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        {formCount > 0 ? (
-          <Badge variant="secondary" className="text-[10px] font-bold gap-1">
-            <FileText className="h-3 w-3" />
-            {formCount} {hasValidForms ? '✓' : ''}
-          </Badge>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+    <>
+      <tr
+        className={cn(
+          'border-t border-border cursor-pointer transition-colors hover:bg-muted/40',
+          patient.isIncomplete && 'bg-destructive/5'
         )}
-      </td>
-      <td className="px-4 py-3 text-right">
-        <ChevronRight className={cn('h-4 w-4 text-muted-foreground transition-transform', expanded && 'rotate-90')} />
-      </td>
-    </tr>
+        onClick={() => setExpanded(!expanded)}
+      >
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+              {patient.lastName[0]}{patient.firstName[0]}
+            </div>
+            <div>
+              <span className="font-medium">{patient.lastName} {patient.firstName}</span>
+              {patient.isIncomplete && (
+                <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-destructive">
+                  <AlertTriangle className="h-3 w-3" />
+                  Incomplet
+                </span>
+              )}
+            </div>
+          </div>
+        </td>
+        <td className="px-4 py-3 text-muted-foreground text-xs">
+          {patient.cnp || '—'}
+        </td>
+        <td className="px-4 py-3 text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Phone className="h-3.5 w-3.5" />
+            {patient.phone}
+          </div>
+        </td>
+        <td className="px-4 py-3 text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            {new Date(patient.dateOfBirth).toLocaleDateString('ro-RO')}
+            <span className="text-xs opacity-60">({getAge(patient.dateOfBirth)} ani)</span>
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          {forms.length > 0 ? (
+            <div className="flex items-center gap-1.5">
+              {validCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] font-bold gap-1 bg-emerald-500/15 text-emerald-700 border-0">
+                  {validCount} valide
+                </Badge>
+              )}
+              {expiredCount > 0 && (
+                <Badge variant="outline" className="text-[10px] font-bold gap-1 text-muted-foreground">
+                  {expiredCount} expirate
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </td>
+        <td className="px-4 py-3 text-right">
+          {expanded
+            ? <ChevronDown className="h-4 w-4 text-muted-foreground inline" />
+            : <ChevronRight className="h-4 w-4 text-muted-foreground inline" />
+          }
+        </td>
+      </tr>
+      {expanded && (
+        <tr>
+          <td colSpan={6} className="bg-muted/30 px-6 py-3">
+            {forms.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">Niciun formular completat.</p>
+            ) : (
+              <div className="border border-border rounded-md overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-muted/50 text-left">
+                      <th className="px-3 py-1.5 font-medium text-muted-foreground">Formular</th>
+                      <th className="px-3 py-1.5 font-medium text-muted-foreground">Completat</th>
+                      <th className="px-3 py-1.5 font-medium text-muted-foreground">Expiră</th>
+                      <th className="px-3 py-1.5 font-medium text-muted-foreground">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {forms
+                      .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
+                      .map(f => {
+                        const tpl = templates.find(t => t.id === f.formTemplateId);
+                        const isValid = f.expiresAt > now;
+                        return (
+                          <tr key={f.id} className="border-t border-border">
+                            <td className="px-3 py-1.5 font-medium">{tpl?.title || f.formTemplateId}</td>
+                            <td className="px-3 py-1.5 text-muted-foreground">
+                              {new Date(f.completedAt).toLocaleDateString('ro-RO')}
+                            </td>
+                            <td className="px-3 py-1.5 text-muted-foreground">
+                              {new Date(f.expiresAt).toLocaleDateString('ro-RO')}
+                            </td>
+                            <td className="px-3 py-1.5">
+                              <span className={cn(
+                                'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                                isValid ? 'bg-emerald-500/20 text-emerald-700' : 'bg-muted text-muted-foreground',
+                              )}>
+                                {isValid ? 'Valid' : 'Expirat'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -79,39 +156,38 @@ export default function PatientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
 
-  // Get all patients (pass search only if 2+ chars)
   const { data: allPatients } = usePatients(searchQuery.length >= 2 ? searchQuery : undefined);
+  const { data: formTemplates } = useFormTemplates();
+
+  // Load forms for ALL patients by not filtering (empty string returns all in mock)
   const { data: allForms } = useCompletedForms('');
 
   const now = new Date().toISOString();
 
-  // Build form counts per patient
+  // Group forms by patient
   const formsByPatient = useMemo(() => {
-    const map = new Map<string, { total: number; valid: number }>();
+    const map = new Map<string, CompletedForm[]>();
     for (const f of allForms) {
-      const entry = map.get(f.patientId) || { total: 0, valid: 0 };
-      entry.total++;
-      if (f.expiresAt > now) entry.valid++;
-      map.set(f.patientId, entry);
+      const list = map.get(f.patientId) || [];
+      list.push(f);
+      map.set(f.patientId, list);
     }
     return map;
-  }, [allForms, now]);
+  }, [allForms]);
 
   // Apply filters
   const filteredPatients = useMemo(() => {
-    let list = searchQuery.length >= 2 ? allPatients : allPatients;
-
     switch (filter) {
       case 'incomplete':
-        return list.filter(p => p.isIncomplete);
+        return allPatients.filter(p => p.isIncomplete);
       case 'with_forms':
-        return list.filter(p => (formsByPatient.get(p.id)?.total || 0) > 0);
+        return allPatients.filter(p => (formsByPatient.get(p.id)?.length || 0) > 0);
       case 'no_forms':
-        return list.filter(p => !formsByPatient.get(p.id)?.total);
+        return allPatients.filter(p => !formsByPatient.get(p.id)?.length);
       default:
-        return list;
+        return allPatients;
     }
-  }, [allPatients, filter, formsByPatient, searchQuery]);
+  }, [allPatients, filter, formsByPatient]);
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: `Toți (${allPatients.length})` },
@@ -122,7 +198,6 @@ export default function PatientsPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {/* Header */}
       <div className="border-b border-border p-4">
         <div className="flex items-center gap-3">
           <Users className="h-5 w-5 text-primary" />
@@ -134,7 +209,6 @@ export default function PatientsPage() {
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
-        {/* Search + Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-72">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -160,7 +234,6 @@ export default function PatientsPage() {
           </div>
         </div>
 
-        {/* Table */}
         {filteredPatients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Users className="h-12 w-12 mb-3 opacity-30" />
@@ -172,6 +245,7 @@ export default function PatientsPage() {
               <thead>
                 <tr className="bg-muted/50 text-left">
                   <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground">Pacient</th>
+                  <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground">CNP</th>
                   <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground">Telefon</th>
                   <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground">Data nașterii</th>
                   <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground">Formulare</th>
@@ -179,17 +253,15 @@ export default function PatientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPatients.map(p => {
-                  const fc = formsByPatient.get(p.id);
-                  return (
-                    <PatientRow
-                      key={p.id}
-                      patient={p}
-                      formCount={fc?.total || 0}
-                      hasValidForms={(fc?.valid || 0) > 0}
-                    />
-                  );
-                })}
+                {filteredPatients.map(p => (
+                  <PatientRow
+                    key={p.id}
+                    patient={p}
+                    forms={formsByPatient.get(p.id) || []}
+                    templates={formTemplates}
+                    now={now}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
