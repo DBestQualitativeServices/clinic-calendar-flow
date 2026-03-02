@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useCategories, useUpdateAppointmentStatus, useFormsStatusForPatient, usePatientAppointments } from '@/hooks/data';
+import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useCategories, useUpdateAppointmentStatus, useFormsStatusForPatient, usePatientAppointments, useCreateTabletSession } from '@/hooks/data';
 import { useMockData } from '@/hooks/mock/MockDataProvider';
 import { useUIState } from '@/store/uiStore';
 import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
@@ -81,8 +81,16 @@ function PatientBlock({ patientId, consultations, isInConsult, onDurationChange,
 
 function PatientHeader({ appointmentId, patientId, formsReady, onRefreshForms }: { appointmentId: string; patientId: string; formsReady: boolean; onRefreshForms?: () => void }) {
   const { data: patient } = usePatientById(patientId);
-  const { tabletSessions } = useMockData();
+  const { tabletSessions, patients: allPatients } = useMockData();
+  const { mutate: addTabletSession } = useCreateTabletSession();
   const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
+
+  const generateCode = () => {
+    const p = allPatients.find(pt => pt.id === patientId);
+    const code = p?.cnp ? p.cnp.slice(-4) : String(Math.floor(1000 + Math.random() * 9000));
+    addTabletSession({ accessCode: code, appointmentId, patientId, active: true, createdAt: new Date().toISOString() });
+    toast({ title: `Cod generat: ${code}` });
+  };
 
   if (!patient) return null;
 
@@ -110,12 +118,16 @@ function PatientHeader({ appointmentId, patientId, formsReady, onRefreshForms }:
             </div>
           )}
         </div>
-        {session && (
+        {session ? (
           <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-md bg-primary/10 border border-primary/30 flex-shrink-0">
             <Tablet className="h-4 w-4 text-primary" />
             <span className="text-lg font-bold tracking-[0.25em] text-primary leading-none">{session.accessCode}</span>
             <span className="text-[8px] text-primary/60 uppercase">cod tabletă</span>
           </div>
+        ) : (
+          <Button variant="outline" size="sm" className="text-xs gap-1.5 flex-shrink-0" onClick={generateCode}>
+            <Tablet className="h-3.5 w-3.5" /> Cod tabletă
+          </Button>
         )}
       </div>
       {formsReady && onRefreshForms && (
