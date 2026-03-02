@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { format, startOfWeek, addDays, subWeeks, addWeeks } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Lock, CalendarPlus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, CalendarPlus, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDoctors, useAppointments, useBlockedSlots, useConsultationTypes, usePatientById, useCreateBlockedSlot } from '@/hooks/data';
+import { useDoctors, useAppointments, useBlockedSlots, useConsultationTypes, usePatientById, useCreateBlockedSlot, usePatients } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
 import { generateTimeSlots, timeToMinutes, minutesToTime, formatDuration, formatPatientName } from '@/lib/calendar-utils';
 import { STATUS_CONFIG } from '@/lib/constants';
@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 const SLOT_HEIGHT = 48;
 
-function DayAppointmentCard({ appointment }: { appointment: import('@/types').Appointment }) {
+function DayAppointmentCard({ appointment, highlighted, dimmed }: { appointment: import('@/types').Appointment; highlighted?: boolean; dimmed?: boolean }) {
   const { setActivePanel } = useUIState();
   const { data: consultationTypes } = useConsultationTypes();
   const { data: patient } = usePatientById(appointment.patients[0]?.patientId);
@@ -29,9 +29,11 @@ function DayAppointmentCard({ appointment }: { appointment: import('@/types').Ap
     <div
       className={cn(
         "absolute left-1 right-1 rounded-md px-2 py-1 cursor-pointer overflow-hidden border border-border bg-card",
-        "border-l-[3px]",
+        "border-l-[3px] transition-all duration-200",
         appointment.status === 'finalizat' && 'opacity-60',
         appointment.status === 'anulat' && 'opacity-40',
+        highlighted && 'ring-2 ring-primary shadow-md scale-[1.02] z-20',
+        dimmed && 'opacity-30',
       )}
       style={{
         top: `${topPx}px`,
@@ -142,13 +144,90 @@ function EmptySlotBlock({ doctorId, date, startTime }: { doctorId: string; date:
   );
 }
 
+/* Checked-in patients zone — shows patients with status 'sosit' */
+function CheckedInCard({ apt }: { apt: import('@/types').Appointment }) {
+  const { data: consultationTypes } = useConsultationTypes();
+  const { data: patient } = usePatientById(apt.patients[0]?.patientId);
+  const { setActivePanel } = useUIState();
+  const name = patient ? formatPatientName(patient) : 'Necunoscut';
+  const badge = STATUS_CONFIG[apt.status];
+
+  return (
+    <div
+      className={cn(
+        "flex-shrink-0 rounded-md px-3 py-2 text-xs cursor-pointer border shadow-sm hover:shadow-md transition-shadow",
+        "bg-status-sosit/15 border-status-sosit/40"
+      )}
+      onClick={() => setActivePanel({ type: 'details', appointmentId: apt.id })}
+    >
+      <p className="font-semibold text-foreground">{name}</p>
+      <p className="text-[10px] text-muted-foreground">
+        {apt.startTime || 'Walk-in'} · {formatDuration(apt.totalDurationMinutes)}
+      </p>
+      <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">
+        {apt.patients[0]?.consultations.map(c => {
+          const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
+          return ct?.name ?? '';
+        }).join(', ')}
+      </p>
+      <span className={cn('text-[8px] px-1.5 py-0.5 rounded-full mt-1 inline-block', badge.cls)}>
+        {badge.label}
+      </span>
+    </div>
+  );
+}
+
+function CheckedInZone({ checkedIn }: { checkedIn: import('@/types').Appointment[] }) {
+  const [expanded, setExpanded] = useState(checkedIn.length > 0);
+
+  if (checkedIn.length === 0 && !expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="flex items-center gap-2 px-5 py-1.5 bg-card border-b border-border text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ChevronDown className="h-3 w-3" />
+        Niciun pacient la recepție
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-card border-b border-border">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 px-5 py-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors w-full text-left"
+      >
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        <Clock className="h-3 w-3" />
+        Pacienți sosiți ({checkedIn.length})
+      </button>
+
+      {expanded && (
+        <div className="flex gap-2 px-5 pb-2.5 overflow-x-auto">
+          {checkedIn.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-1">Niciun pacient sosit momentan.</p>
+          ) : (
+            checkedIn.map(apt => <CheckedInCard key={apt.id} apt={apt} />)
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ConsultationsPage() {
   const { data: doctors } = useDoctors();
+  const { data: patients } = usePatients();
+  const { data: consultationTypes } = useConsultationTypes();
   const [selectedDoctorId, setSelectedDoctorId] = useState(doctors[0]?.id ?? '');
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const selectedDoctor = doctors.find(d => d.id === selectedDoctorId);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
+
+  const { searchQuery: rawSearch } = useUIState();
+  const searchQuery = rawSearch.toLowerCase().trim();
 
   // Generate 6 days (Mon-Sat)
   const weekDays = useMemo(() => {
@@ -157,6 +236,23 @@ export default function ConsultationsPage() {
       return { date: format(d, 'yyyy-MM-dd'), label: format(d, 'EEE d', { locale: ro }), dayObj: d };
     });
   }, [weekStart]);
+
+  // Collect all appointments for this doctor across the week for search
+  const allWeekDates = useMemo(() => weekDays.map(d => d.date), [weekDays]);
+
+  // Checked-in patients: all 'sosit' appointments for this doctor today
+  const today = new Date().toISOString().split('T')[0];
+  const { data: todayAppointments } = useAppointments(today, selectedDoctorId);
+  const checkedIn = useMemo(
+    () => todayAppointments
+      .filter(a => a.status === 'sosit')
+      .sort((a, b) => {
+        const aMin = a.startTime ? timeToMinutes(a.startTime) : 9999;
+        const bMin = b.startTime ? timeToMinutes(b.startTime) : 9999;
+        return aMin - bMin;
+      }),
+    [todayAppointments]
+  );
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -194,6 +290,9 @@ export default function ConsultationsPage() {
         </div>
       </div>
 
+      {/* Checked-in patients zone */}
+      {selectedDoctor && <CheckedInZone checkedIn={checkedIn} />}
+
       {/* Grid */}
       {selectedDoctor && (
         <div className="flex-1 overflow-auto">
@@ -215,6 +314,9 @@ export default function ConsultationsPage() {
                 label={day.label}
                 doctorId={selectedDoctorId}
                 timeSlots={timeSlots}
+                searchQuery={searchQuery}
+                patients={patients}
+                consultationTypes={consultationTypes}
               />
             ))}
           </div>
@@ -230,9 +332,15 @@ export default function ConsultationsPage() {
   );
 }
 
-function DayColumn({ date, label, doctorId, timeSlots }: { date: string; label: string; doctorId: string; timeSlots: string[] }) {
+function DayColumn({ date, label, doctorId, timeSlots, searchQuery, patients, consultationTypes }: {
+  date: string; label: string; doctorId: string; timeSlots: string[];
+  searchQuery: string;
+  patients: import('@/types').Patient[];
+  consultationTypes: import('@/types').ConsultationType[];
+}) {
   const { data: appointments } = useAppointments(date, doctorId);
   const { data: timeBlocks } = useBlockedSlots(date);
+  const { data: doctors } = useDoctors();
   const isToday = date === new Date().toISOString().split('T')[0];
 
   const doctorBlocks = useMemo(
@@ -244,6 +352,33 @@ function DayColumn({ date, label, doctorId, timeSlots }: { date: string; label: 
     () => appointments.filter(a => a.startTime && a.status !== 'anulat'),
     [appointments]
   );
+
+  // Search: compute matching IDs like /scheduling
+  const matchingIds = useMemo(() => {
+    if (!searchQuery) return new Set<string>();
+    const ids = new Set<string>();
+    for (const apt of activeApts) {
+      const doctor = doctors.find(d => d.id === apt.doctorId);
+      if (doctor?.name.toLowerCase().includes(searchQuery)) { ids.add(apt.id); continue; }
+      const patientMatch = apt.patients.some(pe => {
+        const p = patients.find(pt => pt.id === pe.patientId);
+        if (!p) return false;
+        return `${p.lastName} ${p.firstName}`.toLowerCase().includes(searchQuery) ||
+               `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchQuery);
+      });
+      if (patientMatch) { ids.add(apt.id); continue; }
+      const consultMatch = apt.patients.some(pe =>
+        pe.consultations.some(c => {
+          const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
+          return ct?.name.toLowerCase().includes(searchQuery);
+        })
+      );
+      if (consultMatch) ids.add(apt.id);
+    }
+    return ids;
+  }, [searchQuery, activeApts, doctors, patients, consultationTypes]);
+
+  const hasSearch = !!searchQuery;
 
   return (
     <div className="flex flex-col min-w-[140px] flex-1">
@@ -284,7 +419,12 @@ function DayColumn({ date, label, doctorId, timeSlots }: { date: string; label: 
 
         {/* Appointments */}
         {activeApts.map(apt => (
-          <DayAppointmentCard key={apt.id} appointment={apt} />
+          <DayAppointmentCard
+            key={apt.id}
+            appointment={apt}
+            highlighted={hasSearch && matchingIds.has(apt.id)}
+            dimmed={hasSearch && !matchingIds.has(apt.id)}
+          />
         ))}
       </div>
     </div>
