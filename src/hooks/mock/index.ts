@@ -6,6 +6,7 @@ export { useCategories } from './useCategories';
 export { useConsultationTypes } from './useConsultationTypes';
 export { useAppointments } from './useAppointments';
 export { useAppointmentById } from './useAppointmentById';
+export { usePatientAppointments } from './usePatientAppointments';
 export { useUnresolvedAppointments } from './useUnresolvedAppointments';
 export { useBlockedSlots } from './useBlockedSlots';
 export { useAvailableSlots } from './useAvailableSlots';
