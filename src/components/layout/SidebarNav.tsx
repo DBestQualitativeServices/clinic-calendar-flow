@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, FileText, Users, Stethoscope, Settings } from 'lucide-react';
+import { Calendar, FileText, Users, Stethoscope, Settings, Tablet } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -19,6 +19,7 @@ const mainItems = [
   { title: 'Formulare', url: '/forms', icon: FileText },
   { title: 'Pacienți', url: '/patients', icon: Users },
   { title: 'Consulturi', url: '/consultations', icon: Stethoscope },
+  { title: 'Tabletă', url: '/tablet', icon: Tablet },
 ];
 
 const footerItems = [

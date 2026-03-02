@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useFormsStatus, useFormTemplates, useCompleteAppointment } from '@/hooks/data';
+import { useTabletCode } from '@/hooks/useTabletCode';
 import { useUIState } from '@/store/uiStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, CreditCard, Printer, CalendarPlus, FileText, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { formatPatientName, formatDuration, getConsultationsSummary } from '@/lib/calendar-utils';
+import { CheckCircle, Printer, CalendarPlus, Info, AlertTriangle, Tablet } from 'lucide-react';
+import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
 
 interface FinalizationModalProps {
   appointmentId: string;
@@ -22,19 +20,18 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   const { data: doctors } = useDoctors();
   const { data: consultationTypes } = useConsultationTypes();
   const { data: formsStatus } = useFormsStatus(appointmentId);
-  const { data: formTemplates } = useFormTemplates();
   const { mutate: completeAppointment } = useCompleteAppointment();
   const { setActivePanel } = useUIState();
+  const patientId = apt?.patients[0]?.patientId ?? '';
+  const { session, generate } = useTabletCode(appointmentId, patientId);
 
-  const [paymentDone, setPaymentDone] = useState(false);
   const [documentsPrinted, setDocumentsPrinted] = useState(false);
-  const [nextAppointment, setNextAppointment] = useState(false);
 
   if (!apt) return null;
 
   const doctor = doctors.find(d => d.id === apt.doctorId);
   const allConsultations = apt.patients.flatMap(p => p.consultations);
-  const consultsSummary = getConsultationsSummary(allConsultations, consultationTypes);
+  const hasMissingForms = formsStatus && formsStatus.missingTemplateIds.length > 0;
 
   const handleFinalize = () => {
     completeAppointment({ appointmentId: apt.id });
@@ -42,8 +39,12 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
     onOpenChange(false);
   };
 
+  const handlePrint = () => {
+    setDocumentsPrinted(true);
+    toast({ title: 'Scrisoare medicală generată', description: 'Fișierul PDF a fost trimis la printare.' });
+  };
+
   const handleNewAppointment = () => {
-    setNextAppointment(true);
     onOpenChange(false);
     setActivePanel({ type: 'booking', prefill: { doctorId: apt.doctorId } });
   };
@@ -59,9 +60,18 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
         </DialogHeader>
 
         <div className="rounded-lg bg-accent/50 border border-border p-3 space-y-1.5">
-          <FinalizationPatientName patientId={apt.patients[0]?.patientId} />
-          <p className="text-xs text-muted-foreground">{doctor?.name}</p>
-          <p className="text-xs text-muted-foreground">{apt.date} · {apt.startTime || 'Walk-in'} · {formatDuration(apt.totalDurationMinutes)}</p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <FinalizationPatientName patientId={patientId} />
+              <p className="text-xs text-muted-foreground">{apt.date} · {apt.startTime || 'Walk-in'} · {formatDuration(apt.totalDurationMinutes)}</p>
+            </div>
+            {session && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 border border-primary/30 flex-shrink-0">
+                <Tablet className="h-3.5 w-3.5 text-primary" />
+                <span className="text-sm font-bold tracking-widest text-primary">{session.accessCode}</span>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {allConsultations.map((c, i) => {
               const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
@@ -74,70 +84,75 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
           </div>
         </div>
 
-        <div className="space-y-3 py-2">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Checklist (opțional)</p>
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Checkbox id="payment" checked={paymentDone} onCheckedChange={(v) => setPaymentDone(!!v)} />
-              <Label htmlFor="payment" className="text-sm cursor-pointer">Plată efectuată</Label>
-            </div>
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => setPaymentDone(true)}>
-              <CreditCard className="h-3.5 w-3.5" /> Încasează
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Checkbox id="documents" checked={documentsPrinted} onCheckedChange={(v) => setDocumentsPrinted(!!v)} />
-              <Label htmlFor="documents" className="text-sm cursor-pointer">Documente printate</Label>
-            </div>
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => setDocumentsPrinted(true)}>
-              <Printer className="h-3.5 w-3.5" /> Printează
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Checkbox id="next-apt" checked={nextAppointment} onCheckedChange={(v) => setNextAppointment(!!v)} />
-              <Label htmlFor="next-apt" className="text-sm cursor-pointer">Programare următoare creată</Label>
-            </div>
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={handleNewAppointment}>
-              <CalendarPlus className="h-3.5 w-3.5" /> Programează
-            </Button>
-          </div>
-
-          {formsStatus.total > 0 && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <FileText className={cn(
-                  "h-4 w-4",
-                  formsStatus.completed === formsStatus.total ? "text-emerald-600" : "text-amber-500"
-                )} />
-                <span className="text-sm">
-                  Formulare completate: {formsStatus.completed}/{formsStatus.total}
-                  {formsStatus.completed === formsStatus.total ? ' ✓' : ' ⚠️'}
-                </span>
+        {/* Forms warning with tablet code */}
+        {hasMissingForms && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-destructive">Formulare incomplete!</p>
+                <p className="text-[11px] text-destructive/80 mt-0.5">
+                  {formsStatus.missingTemplateIds.length} formular(e) nu au fost completate. Finalizarea fără formulare complete poate genera probleme legale.
+                </p>
               </div>
-              {formsStatus.missingTemplateIds.length > 0 && (
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 ml-6">
-                    <ChevronDown className="h-3 w-3" />
-                    {formsStatus.missingTemplateIds.length} formulare nesemnate
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="ml-6 mt-1 space-y-0.5">
-                    {formsStatus.missingTemplateIds.map(id => {
-                      const tid = id.includes(':') ? id.split(':')[1] : id;
-                      const template = formTemplates.find(t => t.id === tid);
-                      return (
-                        <p key={id} className="text-xs text-muted-foreground">• {template?.title || tid}</p>
-                      );
-                    })}
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
             </div>
-          )}
+            {session ? (
+              <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/30">
+                <Tablet className="h-5 w-5 text-primary" />
+                <div>
+                  <span className="text-xl font-bold tracking-[0.3em] text-primary">{session.accessCode}</span>
+                  <p className="text-[9px] text-primary/60">Cod tabletă — completați formularele acum</p>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5"
+                onClick={generate}
+              >
+                <Tablet className="h-3.5 w-3.5" /> Generează cod tabletă pentru completare
+              </Button>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Printer className={`h-4 w-4 ${documentsPrinted ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Label className="text-sm">Printare scrisoare medicală</Label>
+            </div>
+            <Button
+              variant={documentsPrinted ? 'secondary' : 'outline'}
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={handlePrint}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              {documentsPrinted ? 'Printat ✓' : 'Printează PDF'}
+            </Button>
+          </div>
+
+          <div className="rounded-md border border-border p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <CalendarPlus className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm font-medium">Programare următoare</Label>
+            </div>
+            <div className="rounded bg-muted/50 p-2.5 space-y-1">
+              <FinalizationPatientNameSmall patientId={patientId} />
+              <p className="text-xs text-muted-foreground">Doctor: {doctor?.name}</p>
+            </div>
+            <div className="flex items-start gap-2 p-2 rounded bg-accent/30 border border-border">
+              <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Verificați disponibilitatea în calendar și creați o programare nouă direct de acolo.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={handleNewAppointment}>
+              <CalendarPlus className="h-3.5 w-3.5" /> Deschide formularul de programare
+            </Button>
+          </div>
         </div>
 
         <DialogFooter>
@@ -154,4 +169,9 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
 function FinalizationPatientName({ patientId }: { patientId: string }) {
   const { data: patient } = usePatientById(patientId);
   return <p className="text-sm font-bold">{patient ? formatPatientName(patient) : 'Necunoscut'}</p>;
+}
+
+function FinalizationPatientNameSmall({ patientId }: { patientId: string }) {
+  const { data: patient } = usePatientById(patientId);
+  return <p className="text-xs font-medium">Pacient: {patient ? formatPatientName(patient) : 'Necunoscut'}</p>;
 }

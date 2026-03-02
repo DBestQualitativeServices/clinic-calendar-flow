@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useUIState } from '@/store/uiStore';
-import { useDoctors, useAppointments, useBlockedSlots } from '@/hooks/data';
+import { useDoctors, useAppointments, useBlockedSlots, usePatients, useConsultationTypes } from '@/hooks/data';
 import { generateTimeSlots } from '@/lib/calendar-utils';
+import { useAppointmentSearch } from '@/hooks/useAppointmentSearch';
 import TimeColumn from './TimeColumn';
 import DoctorColumn from './DoctorColumn';
 import WalkInZone from './WalkInZone';
@@ -13,12 +14,14 @@ export default function CalendarGrid() {
   const { data: doctors } = useDoctors();
   const { data: appointments } = useAppointments(calendar.selectedDate);
   const { data: timeBlocks } = useBlockedSlots(calendar.selectedDate);
+  const { data: patients } = usePatients();
+  const { data: consultationTypes } = useConsultationTypes();
   const timeSlots = useMemo(() => generateTimeSlots(), []);
 
-  const visibleDoctors = useMemo(() => {
-    if (!calendar.specialtyFilter) return doctors;
-    return doctors.filter(d => d.categoryIds.includes(calendar.specialtyFilter!));
-  }, [doctors, calendar.specialtyFilter]);
+  const { searchQuery: rawSearch } = useUIState();
+  const searchQuery = rawSearch.toLowerCase().trim();
+
+  const matchingAppointmentIds = useAppointmentSearch(searchQuery, appointments, doctors, patients, consultationTypes);
 
   const walkIns = useMemo(
     () => appointments.filter(a => !a.startTime && a.isWalkIn),
@@ -31,7 +34,7 @@ export default function CalendarGrid() {
       <div className="flex-1 overflow-auto">
         <div className="flex min-w-fit">
           <TimeColumn slotHeight={SLOT_HEIGHT} />
-          {visibleDoctors.map(doctor => (
+          {doctors.map(doctor => (
             <DoctorColumn
               key={doctor.id}
               doctor={doctor}
@@ -39,11 +42,13 @@ export default function CalendarGrid() {
               timeBlocks={timeBlocks.filter(tb => tb.doctorId === doctor.id)}
               slotHeight={SLOT_HEIGHT}
               timeSlots={timeSlots}
+              highlightedIds={matchingAppointmentIds}
+              hasSearch={!!searchQuery}
             />
           ))}
-          {visibleDoctors.length === 0 && (
+          {doctors.length === 0 && (
             <div className="flex-1 flex items-center justify-center p-20 text-muted-foreground">
-              Niciun doctor disponibil pentru filtrul selectat.
+              Niciun doctor disponibil.
             </div>
           )}
         </div>

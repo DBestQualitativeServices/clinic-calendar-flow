@@ -38,7 +38,20 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
   const { data: allConsultationTypes } = useConsultationTypes();
   const pf = prefill?.prefill;
 
-  const [patientEntries, setPatientEntries] = useState<PatientEntry[]>([createEmptyPatientEntry()]);
+  const [patientEntries, setPatientEntries] = useState<PatientEntry[]>(() => {
+    if (pf?.appointment?.patients?.[0]?.patientId) {
+      const ap = pf.appointment.patients[0];
+      return [{
+        patientId: ap.patientId,
+        isNew: false,
+        newName: '',
+        newPhone: '',
+        newDob: '',
+        consultations: ap.consultations.map(c => ({ categoryId: '', typeId: c.consultationTypeId, duration: c.durationMinutes })),
+      }];
+    }
+    return [createEmptyPatientEntry()];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearchIdx, setActiveSearchIdx] = useState(0);
 
@@ -78,6 +91,12 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
     totalDuration,
     !specificDoctor || !selectedDoctorId ? eligibleDoctorIds : undefined
   );
+
+  // Doctors that have at least one available slot
+  const availableDoctorIds = useMemo(() => {
+    if (!availableSlots?.length) return new Set<string>();
+    return new Set(availableSlots.map(s => s.doctorId));
+  }, [availableSlots]);
 
   const selectPatient = (idx: number, patientId: string) => {
     setPatientEntries(prev => prev.map((pe, i) => i === idx ? { ...pe, patientId, isNew: false } : pe));
@@ -283,7 +302,17 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
               <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Alege doctor..." /></SelectTrigger>
                 <SelectContent>
-                  {eligibleDoctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  {eligibleDoctors.map(d => {
+                    const hasSlots = availableDoctorIds.has(d.id);
+                    return (
+                      <SelectItem key={d.id} value={d.id} disabled={totalDuration > 0 && !hasSlots}>
+                        <span className={cn(!hasSlots && totalDuration > 0 && "text-muted-foreground")}>
+                          {d.name}
+                          {totalDuration > 0 && !hasSlots && ' (indisponibil)'}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             )}
@@ -368,56 +397,85 @@ function ConsultationSelector({
   onAdd: (catId: string, typeId: string) => void;
   onRemove: (idx: number) => void;
 }) {
-  const [selCat, setSelCat] = useState('');
-  const [selType, setSelType] = useState('');
+  const [query, setQuery] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const { data: categories } = useCategories();
   const { data: allConsultationTypes } = useConsultationTypes();
 
-  const filteredTypes = useMemo(() =>
-    allConsultationTypes.filter(ct => ct.categoryId === selCat),
-  [allConsultationTypes, selCat]);
+  const filteredTypes = useMemo(() => {
+    if (!query.trim()) return allConsultationTypes;
+    const q = query.toLowerCase();
+    return allConsultationTypes.filter(ct => ct.name.toLowerCase().includes(q));
+  }, [allConsultationTypes, query]);
 
-  const handleAdd = () => {
-    if (selCat && selType) {
-      onAdd(selCat, selType);
-      setSelCat('');
-      setSelType('');
-    }
+  const handleSelect = (ct: typeof allConsultationTypes[0]) => {
+    onAdd(ct.categoryId, ct.id);
+    setQuery('');
+    setIsFocused(false);
   };
+
+  const getCategoryName = (categoryId: string) =>
+    categories.find(c => c.id === categoryId)?.name ?? '';
 
   return (
     <div className="space-y-2">
-      {consultations.map((c, i) => {
-        const ct = allConsultationTypes.find(t => t.id === c.typeId);
-        return (
-          <div key={i} className="flex items-center gap-2 px-2 py-1 rounded bg-muted text-xs">
-            <span className="flex-1 font-medium">{ct?.name || c.typeId} — {formatDuration(c.duration)}</span>
-            <button onClick={() => onRemove(i)} className="text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
-          </div>
-        );
-      })}
+      {/* Selected consultations as chips */}
+      {consultations.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {consultations.map((c, i) => {
+            const ct = allConsultationTypes.find(t => t.id === c.typeId);
+            const catName = getCategoryName(c.categoryId);
+            return (
+              <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs">
+                <span className="text-muted-foreground">{catName}</span>
+                <span className="font-medium text-foreground">{ct?.name || c.typeId}</span>
+                <span className="text-muted-foreground">({formatDuration(c.duration)})</span>
+                <button onClick={() => onRemove(i)} className="text-destructive/70 hover:text-destructive ml-0.5"><X className="h-3 w-3" /></button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-      <div className="flex gap-1.5 items-end">
-        <div className="flex-1">
-          <Select value={selCat} onValueChange={(v) => { setSelCat(v); setSelType(''); }}>
-            <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Categorie..." /></SelectTrigger>
-            <SelectContent>
-              {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex-1">
-          <Select value={selType} onValueChange={setSelType} disabled={!selCat}>
-            <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Consult..." /></SelectTrigger>
-            <SelectContent>
-              {filteredTypes.map(ct => <SelectItem key={ct.id} value={ct.id}>{ct.name} ({ct.defaultDurationMinutes}m)</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button size="sm" variant="outline" className="h-7 text-[11px] px-2" onClick={handleAdd} disabled={!selType}>
-          <Plus className="h-3 w-3" />
-        </Button>
+      {/* Search input */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+        <Input
+          placeholder="Caută tip consult (ex. Botox, Dermapen)..."
+          className="h-8 text-xs pl-8"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setTimeout(() => setIsFocused(false), 150)}
+        />
       </div>
+
+      {/* Dropdown results */}
+      {isFocused && (query.length > 0 || isFocused) && (
+        <div className="border border-border rounded-md bg-popover shadow-md overflow-hidden max-h-[200px] overflow-y-auto">
+          {filteredTypes.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-muted-foreground">Niciun rezultat</p>
+          ) : (
+            filteredTypes.map(ct => {
+              const catName = getCategoryName(ct.categoryId);
+              return (
+                <button
+                  key={ct.id}
+                  className="w-full px-3 py-2 text-left text-xs hover:bg-accent transition-colors flex items-center justify-between"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => handleSelect(ct)}
+                >
+                  <span>
+                    <span className="font-medium">{ct.name}</span>
+                    <span className="text-muted-foreground ml-1.5">· {catName}</span>
+                  </span>
+                  <span className="text-muted-foreground">{ct.defaultDurationMinutes}m</span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }

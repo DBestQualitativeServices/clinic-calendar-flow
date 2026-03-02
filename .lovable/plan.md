@@ -1,68 +1,28 @@
 
 
-# Plan: Migrare mock → API cu React Query
+# Plan: Enrich Mock Completed Forms
 
-## Overview
-Create `src/hooks/api/` folder mirroring every export from `src/hooks/mock/index.ts`, using `useQuery`/`useMutation` + `apiFetch`. Then update `hooks/data/index.ts` to switch with one line. No visual changes.
+## Problem
+The `/forms` page works but requires searching for a patient. The existing mock data only has completed forms for 4 out of 15 patients (p-1, p-3, p-5, p-9), making it hard to explore the interface.
 
-## New files
+## What changes
 
-### `src/hooks/api/index.ts`
-Barrel file exporting all symbols — same names as `mock/index.ts`. Exports a no-op `MockDataProvider` wrapper and re-exports `FormsStatus` type.
+### `src/data/mock.ts` — Add more completed forms
+Add completed forms for ~6 more patients covering diverse scenarios:
 
-### Query hooks (`src/hooks/api/queries/`)
-Each file uses `useQuery` + `apiFetch`. 15 files:
+| Patient | Forms | Scenario |
+|---------|-------|----------|
+| p-2 (Ana Popa) | ft1 valid, ft4 expired | Partial — 1 valid, 1 expired |
+| p-4 (Elena Stoica) | ft1 valid, ft3 valid, ft4 valid | All valid (Dermatoscopie + extra) |
+| p-6 (Maria Florescu) | None | Zero forms — tests empty state |
+| p-8 (Daniela Neagu) | ft1 expired | Only expired forms |
+| p-10 (Simona Tudor) | ft1 valid, ft2 valid, ft4 valid | All Botox forms valid |
+| p-11 (Florin Georgescu) | ft1 valid | Just GDPR |
+| p-12 (Roxana Lazar) | ft1 valid, ft3 valid, ft4 valid, ft5 valid | Many forms, all valid |
+| p-14 (Andreea Matei) | ft1 valid, ft2 expired, ft4 valid | Mix valid + expired |
 
-| File | queryKey | Endpoint |
-|------|----------|----------|
-| `useDoctors.ts` | `['doctors']` | `GET /doctors` |
-| `usePatients.ts` | `['patients', search]` | `GET /patients?search={search}` |
-| `usePatientById.ts` | `['patients', id]` | `GET /patients/{id}` |
-| `useCategories.ts` | `['categories']` | `GET /categories` |
-| `useConsultationTypes.ts` | `['consultationTypes']` | `GET /consultation-types` |
-| `useAppointments.ts` | `['appointments', date, doctorId]` | `GET /appointments?date=&doctorId=` |
-| `useAppointmentById.ts` | `['appointments', id]` | `GET /appointments/{id}` |
-| `useUnresolvedAppointments.ts` | `['appointments', 'unresolved']` | `GET /appointments?status=unresolved` |
-| `useBlockedSlots.ts` | `['blockedSlots', date]` | `GET /blocked-slots?date=` |
-| `useAvailableSlots.ts` | `['availableSlots', ...]` | `GET /appointments/available-slots?...` |
-| `useFormTemplates.ts` | `['formTemplates']` | `GET /form-templates` |
-| `useFormsStatus.ts` | `['formsStatus', aptId]` | `GET /appointments/{id}/form-readiness` |
-| `useCompletedForms.ts` | `['completedForms', patientId]` | `GET /form-submissions?patientId=` |
-| `useTabletSession.ts` | `['tabletSession', aptId]` | `GET /signing-sessions?appointmentId=` |
-| `useTabletSessionByCode.ts` | `['tabletSession', 'code', code]` | `GET /signing-sessions/code/{code}` |
+This gives 8+ more `CompletedForm` entries in `initialCompletedForms`, using realistic dates. The intersecting logic already works — same ft1 (GDPR) counts for all consultations that need it.
 
-Special: `useFormsStatusForPatient` returns a callback that calls `apiFetch` directly (not a query hook).
-
-### Mutation hooks (`src/hooks/api/mutations/`)
-Each file uses `useMutation` + cache invalidation. 14 files:
-
-| File | Method | Endpoint | Invalidates |
-|------|--------|----------|-------------|
-| `useCreateAppointment.ts` | POST | `/appointments` | `appointments` |
-| `useUpdateAppointmentStatus.ts` | PATCH | `/appointments/{id}` | `appointments` |
-| `useCheckinAppointment.ts` | POST | `/appointments/{id}/checkin` | `appointments` |
-| `useCompleteAppointment.ts` | POST | `/appointments/{id}/complete` | `appointments` |
-| `useCancelAppointment.ts` | POST | `/appointments/{id}/cancel` | `appointments` |
-| `useMarkNoShow.ts` | POST | `/appointments/{id}/no-show` | `appointments` |
-| `useRescheduleAppointment.ts` | POST | `/appointments/{id}/reschedule` | `appointments` |
-| `useCreateBlockedSlot.ts` | POST | `/blocked-slots` | `blockedSlots` |
-| `useDeleteBlockedSlot.ts` | DELETE | `/blocked-slots/{id}` | `blockedSlots` |
-| `useSubmitForm.ts` | POST | `/form-submissions` | `completedForms`, `formsStatus` |
-| `useCreatePatient.ts` | POST | `/patients` | `patients` |
-| `useUpdatePatient.ts` | PUT | `/patients/{id}` | `patients` |
-| `useCreateTabletSession.ts` | POST | `/signing-sessions` | `tabletSession` |
-| `useRemoveTabletSession.ts` | DELETE | `/signing-sessions/{id}` | `tabletSession` |
-
-### `src/hooks/data/index.ts` update
-Comment out mock line, add api line (but keep mock as default for now — just prepare both lines).
-
-## Key decisions
-- Query hooks return `{ data, isLoading, error }` naturally from `useQuery` — signature-compatible
-- Mutation hooks return `{ mutate, mutateAsync, isPending }` naturally from `useMutation` — signature-compatible
-- `MockDataProvider` in api/ is a passthrough `({ children }) => <>{children}</>` so App.tsx doesn't need changes when switching
-- No changes to any component files — they already import from `@/hooks/data`
-- `hooks/data/index.ts` stays on mock export by default; switching is one line change
-
-## File count
-~30 new files in `src/hooks/api/`, 1 edit to `src/hooks/data/index.ts`.
+### No other files change
+The `FormsPage`, `useCompletedForms`, and `useFormsStatus` hooks already handle everything correctly. Richer mock data is all that's needed.
 

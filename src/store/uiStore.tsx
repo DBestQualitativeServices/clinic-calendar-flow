@@ -6,13 +6,20 @@ export type PanelType =
   | { type: 'none' }
   | { type: 'booking'; prefill?: { doctorId?: string; date?: string; startTime?: string; appointment?: import('@/types').Appointment } }
   | { type: 'details'; appointmentId: string }
-  | { type: 'patientForm'; patientId?: string; onComplete?: () => void };
+  | { type: 'patientForm'; patientId?: string; onComplete?: () => void }
+  | { type: 'formViewer'; formId: string; patientId: string }
+  | { type: 'patientDetails'; patientId: string }
+  | { type: 'consultForm'; appointmentId: string };
 
 interface UIState {
   calendar: CalendarState;
   activePanel: PanelType;
+  secondaryPanel: PanelType;
+  searchQuery: string;
   setCalendar: (update: Partial<CalendarState>) => void;
   setActivePanel: (panel: PanelType) => void;
+  setSecondaryPanel: (panel: PanelType) => void;
+  setSearchQuery: (q: string) => void;
 }
 
 const UIContext = createContext<UIState | null>(null);
@@ -22,14 +29,32 @@ export function UIProvider({ children }: { children: ReactNode }) {
     viewMode: 'daily',
     selectedDate: new Date().toISOString().split('T')[0],
   });
-  const [activePanel, setActivePanel] = useState<PanelType>({ type: 'none' });
+  const [activePanel, setActivePanelState] = useState<PanelType>({ type: 'none' });
+  const [secondaryPanel, setSecondaryPanelState] = useState<PanelType>({ type: 'none' });
+  const [searchQuery, setSearchQueryState] = useState('');
 
   const setCalendar = useCallback((update: Partial<CalendarState>) => {
     setCalendarState(prev => ({ ...prev, ...update }));
   }, []);
 
+  const setActivePanel = useCallback((panel: PanelType) => {
+    setActivePanelState(panel);
+    // Close secondary when primary changes
+    if (panel.type === 'none') {
+      setSecondaryPanelState({ type: 'none' });
+    }
+  }, []);
+
+  const setSecondaryPanel = useCallback((panel: PanelType) => {
+    setSecondaryPanelState(panel);
+  }, []);
+
+  const setSearchQuery = useCallback((q: string) => {
+    setSearchQueryState(q);
+  }, []);
+
   return (
-    <UIContext.Provider value={{ calendar, activePanel, setCalendar, setActivePanel }}>
+    <UIContext.Provider value={{ calendar, activePanel, secondaryPanel, searchQuery, setCalendar, setActivePanel, setSecondaryPanel, setSearchQuery }}>
       {children}
     </UIContext.Provider>
   );

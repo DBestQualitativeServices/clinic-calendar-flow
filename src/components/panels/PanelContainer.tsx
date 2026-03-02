@@ -4,28 +4,62 @@ import SlideInPanel from './SlideInPanel';
 import BookingPanel from './BookingPanel';
 import AppointmentDetailsPanel from './AppointmentDetailsPanel';
 import PatientFormPanel from './PatientFormPanel';
+import FormViewerPanel from './FormViewerPanel';
+import PatientDetailsPanel from './PatientDetailsPanel';
+import ConsultFormPanel from './ConsultFormPanel';
+
+function renderPanel(panel: ReturnType<typeof useUIState>['activePanel'], setActivePanel: ReturnType<typeof useUIState>['setActivePanel']) {
+  switch (panel.type) {
+    case 'booking': return <BookingPanel prefill={panel} />;
+    case 'details': return <AppointmentDetailsPanel appointmentId={panel.appointmentId} />;
+    case 'patientForm': return <PatientFormPanel patientId={panel.patientId} onComplete={panel.onComplete} />;
+    case 'formViewer': return <FormViewerPanel formId={panel.formId} patientId={panel.patientId} />;
+    case 'patientDetails': return <PatientDetailsPanel patientId={panel.patientId} />;
+    case 'consultForm': return <ConsultFormPanel appointmentId={panel.appointmentId} />;
+    default: return null;
+  }
+}
+
+const titles: Record<string, string> = {
+  booking: 'Programare nouă',
+  details: 'Detalii programare',
+  patientForm: 'Editare pacient',
+  formViewer: 'Vizualizare formular',
+  patientDetails: 'Fișa pacientului',
+  consultForm: 'Scrisoare medicală',
+};
 
 export default function PanelContainer() {
-  const { activePanel, setActivePanel } = useUIState();
-  const close = () => setActivePanel({ type: 'none' });
-  const isOpen = activePanel.type !== 'none';
+  const { activePanel, secondaryPanel, setActivePanel, setSecondaryPanel } = useUIState();
 
-  const titles: Record<string, string> = {
-    booking: 'Programare nouă',
-    details: 'Detalii programare',
-    patientForm: 'Completare date pacient',
-  };
+  const closePrimary = () => setActivePanel({ type: 'none' });
+  const closeSecondary = () => setSecondaryPanel({ type: 'none' });
+
+  const primaryOpen = activePanel.type !== 'none';
+  const secondaryOpen = secondaryPanel.type !== 'none';
 
   return (
-    <SlideInPanel open={isOpen} onClose={close} title={titles[activePanel.type] || ''}>
-      {activePanel.type === 'booking' && <BookingPanel prefill={activePanel} />}
-      {activePanel.type === 'details' && <AppointmentDetailsPanel appointmentId={activePanel.appointmentId} />}
-      {activePanel.type === 'patientForm' && (
-        <PatientFormPanel
-          patientId={activePanel.patientId}
-          onComplete={activePanel.onComplete}
-        />
-      )}
-    </SlideInPanel>
+    <>
+      {/* Primary panel — shifts left when secondary is open */}
+      <SlideInPanel
+        open={primaryOpen}
+        onClose={closePrimary}
+        title={titles[activePanel.type] || ''}
+        pushed={secondaryOpen}
+        zIndex={40}
+      >
+        {renderPanel(activePanel, setActivePanel)}
+      </SlideInPanel>
+
+      {/* Secondary panel — always on the right edge */}
+      <SlideInPanel
+        open={secondaryOpen}
+        onClose={closeSecondary}
+        title={titles[secondaryPanel.type] || ''}
+        zIndex={45}
+      >
+        {renderPanel(secondaryPanel, setSecondaryPanel)}
+      </SlideInPanel>
+    </>
   );
 }

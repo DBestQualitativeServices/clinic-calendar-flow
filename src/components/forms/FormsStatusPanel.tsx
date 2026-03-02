@@ -1,10 +1,9 @@
 import React from 'react';
-import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient, useCreateTabletSession, useRemoveTabletSession } from '@/hooks/data';
+import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient } from '@/hooks/data';
+import { useUIState } from '@/store/uiStore';
 import { useMockData } from '@/hooks/mock/MockDataProvider';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Copy, RefreshCw, Tablet } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface FormsStatusPanelProps {
@@ -14,10 +13,9 @@ interface FormsStatusPanelProps {
 export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProps) {
   const { data: apt } = useAppointmentById(appointmentId);
   const { data: formTemplates } = useFormTemplates();
-  const { completedForms, tabletSessions } = useMockData();
+  const { completedForms } = useMockData();
   const getFormsStatusForPatient = useFormsStatusForPatient();
-  const { mutate: addTabletSession } = useCreateTabletSession();
-  const { mutate: removeTabletSession } = useRemoveTabletSession();
+  const { setSecondaryPanel } = useUIState();
 
   if (!apt) return null;
 
@@ -26,24 +24,9 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
 
   const renderPatientForms = (patientId: string, consultationTypeIds: string[]) => {
     const status = getFormsStatusForPatient(patientId, consultationTypeIds);
-    const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
 
-    const generateCode = () => {
-      const code = String(Math.floor(1000 + Math.random() * 9000));
-      addTabletSession({ accessCode: code, appointmentId, patientId, active: true, createdAt: new Date().toISOString() });
-      toast({ title: `Cod generat: ${code}` });
-    };
-
-    const regenerateCode = () => {
-      if (session) removeTabletSession(session.accessCode);
-      generateCode();
-    };
-
-    const copyCode = () => {
-      if (session) {
-        navigator.clipboard.writeText(session.accessCode);
-        toast({ title: 'Cod copiat!' });
-      }
+    const handleViewForm = (formId: string) => {
+      setSecondaryPanel({ type: 'formViewer', formId, patientId });
     };
 
     return (
@@ -60,9 +43,19 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
           const isExpired = latestForm && latestForm.expiresAt <= now;
 
           return (
-            <div key={tid} className="flex items-center justify-between px-3 py-2 rounded-md bg-accent/30 border border-border">
-              <div>
-                <p className="text-xs font-medium">{template.title}</p>
+            <div
+              key={tid}
+              className={cn(
+                "flex items-center justify-between px-3 py-2 rounded-md bg-accent/30 border border-border",
+                latestForm && "cursor-pointer hover:bg-accent/60 transition-colors"
+              )}
+              onClick={() => latestForm && handleViewForm(latestForm.id)}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-medium">{template.title}</p>
+                  {latestForm && <Eye className="h-3 w-3 text-muted-foreground" />}
+                </div>
                 {isValid && (
                   <p className="text-[10px] text-muted-foreground mt-0.5">
                     Semnat pe {new Date(latestForm.completedAt).toLocaleDateString('ro-RO')}, expiră {new Date(latestForm.expiresAt).toLocaleDateString('ro-RO')}
@@ -72,7 +65,7 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
                 {!latestForm && <p className="text-[10px] text-muted-foreground mt-0.5">Nesemnat</p>}
               </div>
               <span className={cn(
-                'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                'text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0',
                 isValid && 'bg-emerald-500/20 text-emerald-700',
                 isExpired && 'bg-red-500/20 text-red-700',
                 !latestForm && 'bg-amber-500/20 text-amber-700',
@@ -86,27 +79,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
         {status.total === 0 && (
           <p className="text-xs text-muted-foreground">Niciun formular necesar.</p>
         )}
-
-        <div className="pt-2 border-t border-border">
-          {session ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 border border-primary/30">
-                <Tablet className="h-4 w-4 text-primary" />
-                <span className="text-lg font-bold tracking-widest text-primary">{session.accessCode}</span>
-              </div>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={copyCode}>
-                <Copy className="h-3 w-3" /> Copiază
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={regenerateCode}>
-                <RefreshCw className="h-3 w-3" /> Regenerează
-              </Button>
-            </div>
-          ) : (
-            <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={generateCode}>
-              <Tablet className="h-3.5 w-3.5" /> Generează cod tabletă
-            </Button>
-          )}
-        </div>
       </div>
     );
   };
