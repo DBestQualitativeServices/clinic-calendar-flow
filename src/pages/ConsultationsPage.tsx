@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDoctors, useAppointments, useBlockedSlots, useConsultationTypes, usePatientById, useCreateBlockedSlot, usePatients } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
+import { useAppointmentSearch } from '@/hooks/useAppointmentSearch';
 import { generateTimeSlots, timeToMinutes, minutesToTime, formatDuration, formatPatientName } from '@/lib/calendar-utils';
+import { slotTopPx, slotHeightPx } from '@/lib/grid-utils';
 import { STATUS_CONFIG } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import EmptySlotPopover from '@/components/calendar/EmptySlotPopover';
 
 const SLOT_HEIGHT = 48;
 
@@ -20,9 +22,8 @@ function DayAppointmentCard({ appointment, highlighted, dimmed }: { appointment:
   const { data: consultationTypes } = useConsultationTypes();
   const { data: patient } = usePatientById(appointment.patients[0]?.patientId);
   const badge = STATUS_CONFIG[appointment.status];
-  const heightPx = Math.max((appointment.totalDurationMinutes / 30) * SLOT_HEIGHT, SLOT_HEIGHT * 0.6);
-  const startMin = timeToMinutes(appointment.startTime!) - 480;
-  const topPx = (startMin / 30) * SLOT_HEIGHT;
+  const heightPx = slotHeightPx(appointment.totalDurationMinutes, SLOT_HEIGHT, SLOT_HEIGHT * 0.6);
+  const topPx = slotTopPx(appointment.startTime!, SLOT_HEIGHT);
   const name = patient ? formatPatientName(patient) : 'Necunoscut';
 
   return (
@@ -57,90 +58,6 @@ function DayAppointmentCard({ appointment, highlighted, dimmed }: { appointment:
         </span>
       )}
     </div>
-  );
-}
-
-function EmptySlotBlock({ doctorId, date, startTime }: { doctorId: string; date: string; startTime: string }) {
-  const { mutate: addBlock } = useCreateBlockedSlot();
-  const { setActivePanel } = useUIState();
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<'choose' | 'pause'>('choose');
-  const [duration, setDuration] = useState('30');
-  const [reason, setReason] = useState('');
-
-  const handleBlock = () => {
-    let dur = parseInt(duration);
-    if (duration === 'rest') dur = 1080 - timeToMinutes(startTime);
-    addBlock({
-      id: `tb-${Date.now()}`,
-      doctorId,
-      date,
-      startTime,
-      durationMinutes: dur,
-      reason: reason || 'Pauză',
-    });
-    toast({ title: 'Pauză adăugată', description: `${startTime} — ${minutesToTime(timeToMinutes(startTime) + dur)}` });
-    resetAndClose();
-  };
-
-  const handleBooking = () => {
-    setOpen(false);
-    setMode('choose');
-    setActivePanel({ type: 'booking', prefill: { doctorId, date, startTime } });
-  };
-
-  const resetAndClose = () => {
-    setOpen(false);
-    setMode('choose');
-    setDuration('30');
-    setReason('');
-  };
-
-  return (
-    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setMode('choose'); } }}>
-      <PopoverTrigger asChild>
-        <div
-          className="border-b border-border hover:bg-accent/30 transition-colors cursor-pointer relative"
-          style={{ height: `${SLOT_HEIGHT}px` }}
-        >
-          <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/50" />
-        </div>
-      </PopoverTrigger>
-      <PopoverContent className="w-52 p-2" align="start" side="right">
-        {mode === 'choose' ? (
-          <div className="flex flex-col gap-1.5 p-1">
-            <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{startTime} — {date}</p>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 justify-start" onClick={handleBooking}>
-              <CalendarPlus className="h-3.5 w-3.5" /> Programare nouă
-            </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 justify-start" onClick={() => setMode('pause')}>
-              <Lock className="h-3.5 w-3.5" /> Adaugă pauză
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 p-1">
-            <p className="text-xs font-semibold flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-              Pauză de la {startTime}
-            </p>
-            <Select value={duration} onValueChange={setDuration}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="15">15 min</SelectItem>
-                <SelectItem value="30">30 min</SelectItem>
-                <SelectItem value="60">1 oră</SelectItem>
-                <SelectItem value="rest">Restul zilei</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input className="h-7 text-xs" placeholder="Motiv..." value={reason} onChange={e => setReason(e.target.value)} />
-            <div className="flex gap-1.5">
-              <Button size="sm" className="flex-1 h-7 text-xs" onClick={handleBlock}>Confirmă</Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={resetAndClose}>Anulează</Button>
-            </div>
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
   );
 }
 
@@ -236,9 +153,6 @@ export default function ConsultationsPage() {
       return { date: format(d, 'yyyy-MM-dd'), label: format(d, 'EEE d', { locale: ro }), dayObj: d };
     });
   }, [weekStart]);
-
-  // Collect all appointments for this doctor across the week for search
-  const allWeekDates = useMemo(() => weekDays.map(d => d.date), [weekDays]);
 
   // Checked-in patients: all 'sosit' appointments for this doctor today
   const today = new Date().toISOString().split('T')[0];
@@ -341,6 +255,7 @@ function DayColumn({ date, label, doctorId, timeSlots, searchQuery, patients, co
   const { data: appointments } = useAppointments(date, doctorId);
   const { data: timeBlocks } = useBlockedSlots(date);
   const { data: doctors } = useDoctors();
+  const { calendar } = useUIState();
   const isToday = date === new Date().toISOString().split('T')[0];
 
   const doctorBlocks = useMemo(
@@ -353,31 +268,8 @@ function DayColumn({ date, label, doctorId, timeSlots, searchQuery, patients, co
     [appointments]
   );
 
-  // Search: compute matching IDs like /scheduling
-  const matchingIds = useMemo(() => {
-    if (!searchQuery) return new Set<string>();
-    const ids = new Set<string>();
-    for (const apt of activeApts) {
-      const doctor = doctors.find(d => d.id === apt.doctorId);
-      if (doctor?.name.toLowerCase().includes(searchQuery)) { ids.add(apt.id); continue; }
-      const patientMatch = apt.patients.some(pe => {
-        const p = patients.find(pt => pt.id === pe.patientId);
-        if (!p) return false;
-        return `${p.lastName} ${p.firstName}`.toLowerCase().includes(searchQuery) ||
-               `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchQuery);
-      });
-      if (patientMatch) { ids.add(apt.id); continue; }
-      const consultMatch = apt.patients.some(pe =>
-        pe.consultations.some(c => {
-          const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
-          return ct?.name.toLowerCase().includes(searchQuery);
-        })
-      );
-      if (consultMatch) ids.add(apt.id);
-    }
-    return ids;
-  }, [searchQuery, activeApts, doctors, patients, consultationTypes]);
-
+  // Shared search hook
+  const matchingIds = useAppointmentSearch(searchQuery, activeApts, doctors, patients, consultationTypes);
   const hasSearch = !!searchQuery;
 
   return (
@@ -394,14 +286,20 @@ function DayColumn({ date, label, doctorId, timeSlots, searchQuery, patients, co
       {/* Slots */}
       <div className="relative border-r border-border">
         {timeSlots.map(slot => (
-          <EmptySlotBlock key={slot} doctorId={doctorId} date={date} startTime={slot} />
+          <EmptySlotPopover key={slot} doctorId={doctorId} date={date} startTime={slot}>
+            <div
+              className="border-b border-border hover:bg-accent/30 transition-colors cursor-pointer relative"
+              style={{ height: `${SLOT_HEIGHT}px` }}
+            >
+              <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/50" />
+            </div>
+          </EmptySlotPopover>
         ))}
 
         {/* Blocked slots */}
         {doctorBlocks.map(tb => {
-          const startMin = timeToMinutes(tb.startTime) - 480;
-          const topPx = (startMin / 30) * SLOT_HEIGHT;
-          const heightPx = (tb.durationMinutes / 30) * SLOT_HEIGHT;
+          const topPx = slotTopPx(tb.startTime, SLOT_HEIGHT);
+          const heightPx = slotHeightPx(tb.durationMinutes, SLOT_HEIGHT);
           return (
             <div
               key={tb.id}

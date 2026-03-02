@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import AppointmentCard from './AppointmentCard';
 import EmptySlotPopover from './EmptySlotPopover';
 import { timeToMinutes } from '@/lib/calendar-utils';
+import { slotTopPx, slotHeightPx } from '@/lib/grid-utils';
 
 interface DoctorColumnProps {
   doctor: Doctor;
@@ -16,8 +17,6 @@ interface DoctorColumnProps {
   highlightedIds?: Set<string>;
   hasSearch?: boolean;
 }
-
-const SLOT_HEIGHT = 60;
 
 function computeOverlapLayout(appointments: Appointment[]): Map<string, { left: number; width: number }> {
   const layout = new Map<string, { left: number; width: number }>();
@@ -127,9 +126,8 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
         ))}
 
         {timeBlocks.map(tb => {
-          const startMin = timeToMinutes(tb.startTime) - 480;
-          const topPx = (startMin / 30) * slotHeight;
-          const heightPx = (tb.durationMinutes / 30) * slotHeight;
+          const topPx = slotTopPx(tb.startTime, slotHeight);
+          const heightPx = slotHeightPx(tb.durationMinutes, slotHeight);
           return (
             <div
               key={tb.id}
@@ -146,8 +144,7 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
         })}
 
         {activeApts.map(apt => {
-          const startMin = timeToMinutes(apt.startTime!) - 480;
-          const topPx = (startMin / 30) * slotHeight;
+          const topPx = slotTopPx(apt.startTime!, slotHeight);
           const ol = overlapLayout.get(apt.id) || { left: 0, width: 1 };
           return (
             <div
@@ -172,8 +169,7 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
         {appointments
           .filter(a => a.startTime && a.status === 'anulat')
           .map(apt => {
-            const startMin = timeToMinutes(apt.startTime!) - 480;
-            const topPx = (startMin / 30) * slotHeight;
+            const topPx = slotTopPx(apt.startTime!, slotHeight);
             return (
               <div key={apt.id} style={{ position: 'absolute', top: `${topPx}px`, left: 0, right: 0 }}>
                 <AppointmentCard appointment={apt} slotHeight={slotHeight} dimmed={hasSearch} />

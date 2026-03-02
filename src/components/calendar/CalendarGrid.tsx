@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useUIState } from '@/store/uiStore';
 import { useDoctors, useAppointments, useBlockedSlots, usePatients, useConsultationTypes } from '@/hooks/data';
 import { generateTimeSlots } from '@/lib/calendar-utils';
+import { useAppointmentSearch } from '@/hooks/useAppointmentSearch';
 import TimeColumn from './TimeColumn';
 import DoctorColumn from './DoctorColumn';
 import WalkInZone from './WalkInZone';
@@ -20,35 +21,7 @@ export default function CalendarGrid() {
   const { searchQuery: rawSearch } = useUIState();
   const searchQuery = rawSearch.toLowerCase().trim();
 
-  const matchingAppointmentIds = useMemo(() => {
-    if (!searchQuery) return new Set<string>();
-    const ids = new Set<string>();
-    for (const apt of appointments) {
-      // Match doctor name
-      const doctor = doctors.find(d => d.id === apt.doctorId);
-      if (doctor?.name.toLowerCase().includes(searchQuery)) {
-        ids.add(apt.id);
-        continue;
-      }
-      // Match patient names
-      const patientMatch = apt.patients.some(pe => {
-        const p = patients.find(pt => pt.id === pe.patientId);
-        if (!p) return false;
-        return `${p.lastName} ${p.firstName}`.toLowerCase().includes(searchQuery) ||
-               `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchQuery);
-      });
-      if (patientMatch) { ids.add(apt.id); continue; }
-      // Match consultation type names
-      const consultMatch = apt.patients.some(pe =>
-        pe.consultations.some(c => {
-          const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
-          return ct?.name.toLowerCase().includes(searchQuery);
-        })
-      );
-      if (consultMatch) ids.add(apt.id);
-    }
-    return ids;
-  }, [searchQuery, appointments, doctors, patients, consultationTypes]);
+  const matchingAppointmentIds = useAppointmentSearch(searchQuery, appointments, doctors, patients, consultationTypes);
 
   const walkIns = useMemo(
     () => appointments.filter(a => !a.startTime && a.isWalkIn),

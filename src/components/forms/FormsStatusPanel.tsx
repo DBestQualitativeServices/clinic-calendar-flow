@@ -1,11 +1,9 @@
 import React from 'react';
-import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient, useCreateTabletSession, useRemoveTabletSession } from '@/hooks/data';
+import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
 import { useMockData } from '@/hooks/mock/MockDataProvider';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { RefreshCw, Tablet, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface FormsStatusPanelProps {
@@ -15,10 +13,8 @@ interface FormsStatusPanelProps {
 export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProps) {
   const { data: apt } = useAppointmentById(appointmentId);
   const { data: formTemplates } = useFormTemplates();
-  const { completedForms, tabletSessions, patients } = useMockData();
+  const { completedForms } = useMockData();
   const getFormsStatusForPatient = useFormsStatusForPatient();
-  const { mutate: addTabletSession } = useCreateTabletSession();
-  const { mutate: removeTabletSession } = useRemoveTabletSession();
   const { setSecondaryPanel } = useUIState();
 
   if (!apt) return null;
@@ -28,19 +24,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
 
   const renderPatientForms = (patientId: string, consultationTypeIds: string[]) => {
     const status = getFormsStatusForPatient(patientId, consultationTypeIds);
-    const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
-
-    const generateCode = () => {
-      const patient = patients.find(p => p.id === patientId);
-      const code = patient?.cnp ? patient.cnp.slice(-4) : String(Math.floor(1000 + Math.random() * 9000));
-      addTabletSession({ accessCode: code, appointmentId, patientId, active: true, createdAt: new Date().toISOString() });
-      toast({ title: `Cod generat: ${code}` });
-    };
-
-    const regenerateCode = () => {
-      if (session) removeTabletSession(session.accessCode);
-      generateCode();
-    };
 
     const handleViewForm = (formId: string) => {
       setSecondaryPanel({ type: 'formViewer', formId, patientId });
@@ -96,7 +79,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
         {status.total === 0 && (
           <p className="text-xs text-muted-foreground">Niciun formular necesar.</p>
         )}
-
       </div>
     );
   };
