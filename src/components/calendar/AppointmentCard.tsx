@@ -91,7 +91,7 @@ const AppointmentCardInner = forwardRef<HTMLDivElement, AppointmentCardProps & R
           </div>
         </div>
         {heightPx > 28 && (
-          <div className="flex flex-wrap gap-x-1 gap-y-0.5 mt-0.5">
+          <div className="flex flex-col gap-0.5 mt-0.5">
             {allConsultations.map((c, i) => {
               const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
               return (
