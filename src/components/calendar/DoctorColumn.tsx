@@ -13,6 +13,8 @@ interface DoctorColumnProps {
   timeBlocks: TimeBlock[];
   slotHeight: number;
   timeSlots: string[];
+  highlightedIds?: Set<string>;
+  hasSearch?: boolean;
 }
 
 const SLOT_HEIGHT = 60;
@@ -52,7 +54,7 @@ function computeOverlapLayout(appointments: Appointment[]): Map<string, { left: 
   return layout;
 }
 
-export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHeight, timeSlots }: DoctorColumnProps) {
+export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHeight, timeSlots, highlightedIds, hasSearch }: DoctorColumnProps) {
   const { setCalendar, calendar } = useUIState();
   const { data: categories } = useCategories();
 
@@ -157,7 +159,12 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
                 width: `${ol.width * 100}%`,
               }}
             >
-              <AppointmentCard appointment={apt} slotHeight={slotHeight} />
+              <AppointmentCard
+                appointment={apt}
+                slotHeight={slotHeight}
+                highlighted={hasSearch && highlightedIds?.has(apt.id)}
+                dimmed={hasSearch && !highlightedIds?.has(apt.id)}
+              />
             </div>
           );
         })}
@@ -169,7 +176,7 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
             const topPx = (startMin / 30) * slotHeight;
             return (
               <div key={apt.id} style={{ position: 'absolute', top: `${topPx}px`, left: 0, right: 0 }}>
-                <AppointmentCard appointment={apt} slotHeight={slotHeight} />
+                <AppointmentCard appointment={apt} slotHeight={slotHeight} dimmed={hasSearch} />
               </div>
             );
           })}

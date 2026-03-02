@@ -10,6 +10,8 @@ import FormsStatusBadge from '@/components/forms/FormsStatusBadge';
 interface AppointmentCardProps {
   appointment: Appointment;
   slotHeight: number;
+  highlighted?: boolean;
+  dimmed?: boolean;
 }
 
 const statusStyles: Record<string, string> = {
@@ -94,7 +96,7 @@ function PatientColumn({
 }
 
 const AppointmentCardInner = forwardRef<HTMLDivElement, AppointmentCardProps & React.HTMLAttributes<HTMLDivElement>>(
-  ({ appointment, slotHeight, ...props }, ref) => {
+  ({ appointment, slotHeight, highlighted, dimmed, ...props }, ref) => {
     const heightPx = Math.max((appointment.totalDurationMinutes / 30) * slotHeight, slotHeight * 0.5);
     const patientCount = appointment.patients.length;
     const { data: patient } = usePatientById(appointment.patients[0]?.patientId);
@@ -107,9 +109,11 @@ const AppointmentCardInner = forwardRef<HTMLDivElement, AppointmentCardProps & R
         ref={ref}
         {...props}
         className={cn(
-          "absolute left-1 right-1 rounded-md px-2 py-1.5 cursor-pointer overflow-hidden transition-shadow hover:shadow-md border border-border flex flex-col",
+          "absolute left-1 right-1 rounded-md px-2 py-1.5 cursor-pointer overflow-hidden transition-all border border-border flex flex-col",
           statusStyles[appointment.status] ?? 'bg-card',
           appointment.status === 'anulat' && '[&_.patient-name]:line-through',
+          highlighted && 'ring-2 ring-primary shadow-lg scale-[1.02] z-10',
+          dimmed && 'opacity-30',
           props.className,
         )}
         style={{ height: `${heightPx}px`, ...props.style }}
@@ -177,10 +181,10 @@ const AppointmentCardInner = forwardRef<HTMLDivElement, AppointmentCardProps & R
 );
 AppointmentCardInner.displayName = 'AppointmentCardInner';
 
-export default function AppointmentCard({ appointment, slotHeight }: AppointmentCardProps) {
+export default function AppointmentCard({ appointment, slotHeight, highlighted, dimmed }: AppointmentCardProps) {
   return (
     <AppointmentPopover appointment={appointment}>
-      <AppointmentCardInner appointment={appointment} slotHeight={slotHeight} />
+      <AppointmentCardInner appointment={appointment} slotHeight={slotHeight} highlighted={highlighted} dimmed={dimmed} />
     </AppointmentPopover>
   );
 }

@@ -105,6 +105,7 @@ export interface CalendarState {
   selectedDate: string; // ISO date
   selectedDoctorId?: string; // set in weekly mode
   specialtyFilter?: string; // category ID filter
+  searchQuery?: string; // search across appointments
 }
 
 // ===== Medical Forms =====
