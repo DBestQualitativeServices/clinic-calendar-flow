@@ -92,13 +92,8 @@ export const formTemplates: FormTemplate[] = [
     validityDays: 365,
     signatureCount: 1,
     questions: [
-      {
-        id: "q1",
-        text: "Sunt de acord cu prelucrarea datelor personale conform GDPR.",
-        type: "checkbox",
-        required: true,
-      },
-      { id: "q2", text: "Sunt de acord cu fotografierea in scop medical.", type: "checkbox", required: false },
+      { id: "q1", text: "Numele complet al pacientului", type: "text", required: true },
+      { id: "q2", text: "Sunt de acord cu prelucrarea datelor personale conform GDPR.", type: "checkbox", required: true },
     ],
   },
   {
@@ -107,32 +102,18 @@ export const formTemplates: FormTemplate[] = [
     validityDays: 1,
     signatureCount: 1,
     questions: [
-      {
-        id: "q3",
-        text: "Aveti alergii cunoscute la toxina botulinica?",
-        type: "single_select",
-        options: ["Da", "Nu", "Nu stiu"],
-        required: true,
-      },
-      { id: "q4", text: "Daca da, detaliati:", type: "text", required: false },
-      {
-        id: "q5",
-        text: "Luati medicamente anticoagulante?",
-        type: "single_select",
-        options: ["Da", "Nu"],
-        required: true,
-      },
+      { id: "q3", text: "Enumerati alergiile cunoscute", type: "text", required: true },
+      { id: "q4", text: "Confirm ca nu iau medicamente anticoagulante.", type: "checkbox", required: true },
     ],
   },
   {
     id: "ft3",
-    title: "Consimtamant procedura Dermapen",
+    title: "Consimtamant procedura",
     validityDays: 1,
     signatureCount: 1,
     questions: [
+      { id: "q5", text: "Observatii sau intrebari pentru medic", type: "text", required: false },
       { id: "q6", text: "Am fost informat/a despre riscurile procedurii.", type: "checkbox", required: true },
-      { id: "q7", text: "Am fost informat/a despre alternativele disponibile.", type: "checkbox", required: true },
-      { id: "q8", text: "Observatii sau intrebari:", type: "text", required: false },
     ],
   },
   {
@@ -141,13 +122,8 @@ export const formTemplates: FormTemplate[] = [
     validityDays: 365,
     signatureCount: 1,
     questions: [
-      { id: "q9", text: "Sunt de acord cu fotografierea inainte si dupa procedura.", type: "checkbox", required: true },
-      {
-        id: "q10",
-        text: "Sunt de acord cu utilizarea fotografiilor in scop educational.",
-        type: "checkbox",
-        required: false,
-      },
+      { id: "q7", text: "Scopul fotografierii (medical/educational)", type: "text", required: false },
+      { id: "q8", text: "Sunt de acord cu fotografierea inainte si dupa procedura.", type: "checkbox", required: true },
     ],
   },
   {
@@ -156,15 +132,8 @@ export const formTemplates: FormTemplate[] = [
     validityDays: 1,
     signatureCount: 2,
     questions: [
-      { id: "q11", text: "Numele reprezentantului legal:", type: "text", required: true },
-      {
-        id: "q12",
-        text: "Relatia cu pacientul:",
-        type: "single_select",
-        options: ["Parinte", "Tutore legal", "Alt reprezentant"],
-        required: true,
-      },
-      { id: "q13", text: "Confirm ca sunt de acord cu tratamentul minorului.", type: "checkbox", required: true },
+      { id: "q9", text: "Numele reprezentantului legal", type: "text", required: true },
+      { id: "q10", text: "Confirm ca sunt de acord cu tratamentul minorului.", type: "checkbox", required: true },
     ],
   },
 ];
@@ -214,92 +183,65 @@ function yesterdayAt(time: string): string {
 //   p-2, p-4, p-10, p-11, p-12, p-13, p-14: NIMIC
 
 export const initialCompletedForms: CompletedForm[] = [
-  // === p-1 (Ion Marinescu) — Dermapen azi, are GDPR + foto valide, consimtamant Dermapen expirat ===
+  // === p-1 (Ion Marinescu) — GDPR valid, foto valid, consimtamant EXPIRAT ===
   {
     id: "cf1",
     patientId: "p-1",
-    formTemplateId: "ft1", // GDPR
+    formTemplateId: "ft1",
     completedAt: "2026-01-15T10:30:00",
-    expiresAt: "2027-01-15T10:30:00", // valid inca 10 luni
-    answers: [
-      { questionId: "q1", value: true },
-      { questionId: "q2", value: true },
-    ],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    expiresAt: "2027-01-15T10:30:00",
+    answers: [{ questionId: "q1", value: "Ion Marinescu" }, { questionId: "q2", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
   },
   {
     id: "cf2",
     patientId: "p-1",
-    formTemplateId: "ft4", // Consimtamant fotografiere
+    formTemplateId: "ft4",
     completedAt: "2026-01-15T10:35:00",
-    expiresAt: "2027-01-15T10:35:00", // valid inca 10 luni
-    answers: [
-      { questionId: "q9", value: true },
-      { questionId: "q10", value: false },
-    ],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    expiresAt: "2027-01-15T10:35:00",
+    answers: [{ questionId: "q7", value: "Scop medical" }, { questionId: "q8", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
   },
   {
     id: "cf3",
     patientId: "p-1",
-    formTemplateId: "ft3", // Consimtamant Dermapen — EXPIRAT (completat ieri, valabil 1 zi)
+    formTemplateId: "ft3",
     completedAt: yesterdayAt("09:00"),
-    expiresAt: todayAt("09:00"), // expirat de dimineata
-    answers: [
-      { questionId: "q6", value: true },
-      { questionId: "q7", value: true },
-    ],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    expiresAt: todayAt("09:00"),
+    answers: [{ questionId: "q5", value: "Fara observatii" }, { questionId: "q6", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
   },
 
-  // === p-3 (Gheorghe Radu) — Chirurgie minora azi, are doar GDPR valid ===
+  // === p-3 (Gheorghe Radu) — doar GDPR valid ===
   {
     id: "cf4",
     patientId: "p-3",
-    formTemplateId: "ft1", // GDPR
+    formTemplateId: "ft1",
     completedAt: "2025-11-20T14:00:00",
-    expiresAt: "2026-11-20T14:00:00", // valid inca 8 luni
-    answers: [
-      { questionId: "q1", value: true },
-      { questionId: "q2", value: true },
-    ],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    expiresAt: "2026-11-20T14:00:00",
+    answers: [{ questionId: "q1", value: "Gheorghe Radu" }, { questionId: "q2", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
   },
-  // Chirurgie minora necesita ft1 (valid), ft3 (LIPSA), ft4 (LIPSA) → 2 pending
 
-  // === p-5 (Vasile Munteanu) — Peeling azi, are doar GDPR valid ===
+  // === p-5 (Vasile Munteanu) — doar GDPR valid ===
   {
     id: "cf5",
     patientId: "p-5",
-    formTemplateId: "ft1", // GDPR
+    formTemplateId: "ft1",
     completedAt: "2026-02-20T14:00:00",
-    expiresAt: "2027-02-20T14:00:00", // valid inca 11 luni
-    answers: [{ questionId: "q1", value: true }],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    expiresAt: "2027-02-20T14:00:00",
+    answers: [{ questionId: "q1", value: "Vasile Munteanu" }, { questionId: "q2", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
   },
-  // Peeling necesita ft1 (valid), ft4 (LIPSA) → 1 pending
 
-  // === p-9 (Adrian Dinu) — Botox finalizat azi, TOATE formularele ok ===
+  // === p-9 (Adrian Dinu) — TOATE formularele Botox ok ===
   {
     id: "cf6",
     patientId: "p-9",
     formTemplateId: "ft1",
     completedAt: todayAt("07:45"),
     expiresAt: `${today().replace("2026", "2027")}T07:45:00`,
-    answers: [
-      { questionId: "q1", value: true },
-      { questionId: "q2", value: true },
-    ],
+    answers: [{ questionId: "q1", value: "Adrian Dinu" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
     appointmentId: "apt-7",
   },
@@ -309,10 +251,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft2",
     completedAt: todayAt("07:50"),
     expiresAt: todayAt("23:59"),
-    answers: [
-      { questionId: "q3", value: "Nu" },
-      { questionId: "q5", value: "Nu" },
-    ],
+    answers: [{ questionId: "q3", value: "Nicio alergie cunoscuta" }, { questionId: "q4", value: true }],
     signatures: ["data:image/png;base64,SIG"],
     appointmentId: "apt-7",
   },
@@ -322,10 +261,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft4",
     completedAt: todayAt("07:52"),
     expiresAt: `${today().replace("2026", "2027")}T07:52:00`,
-    answers: [
-      { questionId: "q9", value: true },
-      { questionId: "q10", value: true },
-    ],
+    answers: [{ questionId: "q7", value: "Scop medical si educational" }, { questionId: "q8", value: true }],
     signatures: ["data:image/png;base64,SIG"],
     appointmentId: "apt-7",
   },
@@ -337,7 +273,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft1",
     completedAt: "2026-01-10T11:00:00",
     expiresAt: "2027-01-10T11:00:00",
-    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: true }],
+    answers: [{ questionId: "q1", value: "Ana Popa" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -345,8 +281,8 @@ export const initialCompletedForms: CompletedForm[] = [
     patientId: "p-2",
     formTemplateId: "ft4",
     completedAt: yesterdayAt("08:00"),
-    expiresAt: todayAt("08:00"), // expired
-    answers: [{ questionId: "q9", value: true }],
+    expiresAt: todayAt("08:00"),
+    answers: [{ questionId: "q7", value: "Scop medical" }, { questionId: "q8", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
 
@@ -357,7 +293,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft1",
     completedAt: "2026-02-01T09:00:00",
     expiresAt: "2027-02-01T09:00:00",
-    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: false }],
+    answers: [{ questionId: "q1", value: "Elena Stoica" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -366,7 +302,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft3",
     completedAt: todayAt("07:30"),
     expiresAt: todayAt("23:59"),
-    answers: [{ questionId: "q6", value: true }, { questionId: "q7", value: true }],
+    answers: [{ questionId: "q5", value: "Am inteles procedura" }, { questionId: "q6", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -375,29 +311,29 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft4",
     completedAt: "2026-02-01T09:10:00",
     expiresAt: "2027-02-01T09:10:00",
-    answers: [{ questionId: "q9", value: true }, { questionId: "q10", value: true }],
+    answers: [{ questionId: "q7", value: "Doar scop medical" }, { questionId: "q8", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
 
-  // === p-8 (Daniela Neagu) — ft1 expired only ===
+  // === p-8 (Daniela Neagu) — ft1 expired ===
   {
     id: "cf14",
     patientId: "p-8",
     formTemplateId: "ft1",
     completedAt: "2025-02-15T10:00:00",
-    expiresAt: "2026-02-15T10:00:00", // expired (before today March 2026)
-    answers: [{ questionId: "q1", value: true }],
+    expiresAt: "2026-02-15T10:00:00",
+    answers: [{ questionId: "q1", value: "Daniela Neagu" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
 
-  // === p-10 (Simona Tudor) — ft1, ft2, ft4 all valid (Botox-ready) ===
+  // === p-10 (Simona Tudor) — ft1, ft2, ft4 all valid ===
   {
     id: "cf15",
     patientId: "p-10",
     formTemplateId: "ft1",
     completedAt: "2026-02-20T10:00:00",
     expiresAt: "2027-02-20T10:00:00",
-    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: true }],
+    answers: [{ questionId: "q1", value: "Simona Tudor" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -406,7 +342,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft2",
     completedAt: todayAt("08:00"),
     expiresAt: todayAt("23:59"),
-    answers: [{ questionId: "q3", value: "Nu" }, { questionId: "q5", value: "Nu" }],
+    answers: [{ questionId: "q3", value: "Nicio alergie" }, { questionId: "q4", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -415,7 +351,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft4",
     completedAt: "2026-02-20T10:10:00",
     expiresAt: "2027-02-20T10:10:00",
-    answers: [{ questionId: "q9", value: true }],
+    answers: [{ questionId: "q7", value: "Medical" }, { questionId: "q8", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
 
@@ -426,7 +362,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft1",
     completedAt: "2026-01-05T14:00:00",
     expiresAt: "2027-01-05T14:00:00",
-    answers: [{ questionId: "q1", value: true }],
+    answers: [{ questionId: "q1", value: "Florin Georgescu" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
 
@@ -437,7 +373,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft1",
     completedAt: "2026-02-10T09:00:00",
     expiresAt: "2027-02-10T09:00:00",
-    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: true }],
+    answers: [{ questionId: "q1", value: "Roxana Lazar" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -446,7 +382,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft3",
     completedAt: todayAt("07:00"),
     expiresAt: todayAt("23:59"),
-    answers: [{ questionId: "q6", value: true }, { questionId: "q7", value: true }],
+    answers: [{ questionId: "q5", value: "Totul clar" }, { questionId: "q6", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -455,7 +391,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft4",
     completedAt: "2026-02-10T09:15:00",
     expiresAt: "2027-02-10T09:15:00",
-    answers: [{ questionId: "q9", value: true }, { questionId: "q10", value: false }],
+    answers: [{ questionId: "q7", value: "Medical si educational" }, { questionId: "q8", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -464,11 +400,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft5",
     completedAt: todayAt("07:10"),
     expiresAt: todayAt("23:59"),
-    answers: [
-      { questionId: "q11", value: "Roxana Lazar" },
-      { questionId: "q12", value: "Parinte" },
-      { questionId: "q13", value: true },
-    ],
+    answers: [{ questionId: "q9", value: "Roxana Lazar - Parinte" }, { questionId: "q10", value: true }],
     signatures: ["data:image/png;base64,SIG1", "data:image/png;base64,SIG2"],
   },
 
@@ -479,7 +411,7 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft1",
     completedAt: "2026-02-25T11:00:00",
     expiresAt: "2027-02-25T11:00:00",
-    answers: [{ questionId: "q1", value: true }],
+    answers: [{ questionId: "q1", value: "Andreea Matei" }, { questionId: "q2", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -487,8 +419,8 @@ export const initialCompletedForms: CompletedForm[] = [
     patientId: "p-14",
     formTemplateId: "ft2",
     completedAt: yesterdayAt("10:00"),
-    expiresAt: todayAt("10:00"), // expired
-    answers: [{ questionId: "q3", value: "Da" }, { questionId: "q4", value: "Alergie la latex" }, { questionId: "q5", value: "Nu" }],
+    expiresAt: todayAt("10:00"),
+    answers: [{ questionId: "q3", value: "Alergie la latex" }, { questionId: "q4", value: false }],
     signatures: ["data:image/png;base64,SIG"],
   },
   {
@@ -497,11 +429,10 @@ export const initialCompletedForms: CompletedForm[] = [
     formTemplateId: "ft4",
     completedAt: "2026-02-25T11:10:00",
     expiresAt: "2027-02-25T11:10:00",
-    answers: [{ questionId: "q9", value: true }, { questionId: "q10", value: true }],
+    answers: [{ questionId: "q7", value: "Doar medical" }, { questionId: "q8", value: true }],
     signatures: ["data:image/png;base64,SIG"],
   },
 ];
-// ===== Appointments =====
 //
 // Snapshot: e dimineata (~10:00) pe 1 Martie 2026 (Sambata — policlinica e deschisa L-S)
 //
