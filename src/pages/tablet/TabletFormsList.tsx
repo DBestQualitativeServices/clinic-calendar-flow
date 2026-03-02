@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTabletSessionByCode, useDoctors, useFormTemplates } from '@/hooks/mock';
+import { useTabletSessionByCode, useDoctors, useFormTemplates } from '@/hooks/data';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Check, LogOut, RefreshCw } from 'lucide-react';
 

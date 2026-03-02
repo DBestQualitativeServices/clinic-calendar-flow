@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useUnresolvedAppointments, useDoctors, usePatientById, useMarkNoShow, useUpdateAppointmentStatus, useCompleteAppointment } from '@/hooks/mock';
+import { useUnresolvedAppointments, useDoctors, usePatientById, useMarkNoShow, useUpdateAppointmentStatus, useCompleteAppointment } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
 import { formatPatientName } from '@/lib/calendar-utils';
 import { Button } from '@/components/ui/button';

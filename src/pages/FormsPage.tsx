@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { usePatients, useFormTemplates, useCompletedForms } from '@/hooks/mock';
+import { usePatients, useFormTemplates, useCompletedForms } from '@/hooks/data';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

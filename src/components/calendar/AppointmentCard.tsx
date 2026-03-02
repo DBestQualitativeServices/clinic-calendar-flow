@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import type { Appointment } from '@/types';
-import { usePatientById, useConsultationTypes } from '@/hooks/mock';
+import { usePatientById, useConsultationTypes } from '@/hooks/data';
 import { formatPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import AppointmentPopover from './AppointmentPopover';

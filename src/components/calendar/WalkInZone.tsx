@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { Appointment } from '@/types';
-import { useDoctors, useConsultationTypes } from '@/hooks/mock';
-import { usePatientById } from '@/hooks/mock';
+import { useDoctors, useConsultationTypes, usePatientById } from '@/hooks/data';
 import { formatPatientName, getConsultationsSummary, formatDuration } from '@/lib/calendar-utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';

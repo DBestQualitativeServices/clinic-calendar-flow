@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useTabletSessionByCode, useFormTemplates, useSubmitForm } from '@/hooks/mock';
+import { useTabletSessionByCode, useFormTemplates, useSubmitForm } from '@/hooks/data';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
