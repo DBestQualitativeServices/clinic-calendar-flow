@@ -69,15 +69,18 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
     }
   }
 
-  // Check which required forms are valid
   const validFormTemplateIds = new Set(
     completedForms.filter(f => f.expiresAt > now).map(f => f.formTemplateId)
   );
-  const missingFormIds = [...requiredFormIds].filter(id => !validFormTemplateIds.has(id));
-  const validReqCount = [...requiredFormIds].filter(id => validFormTemplateIds.has(id)).length;
 
-  const validForms = completedForms.filter(f => f.expiresAt > now);
-  const expiredForms = completedForms.filter(f => f.expiresAt <= now);
+  // Split forms: necompletate (required but missing/expired) vs completate (valid)
+  const incompleteForms = [...requiredFormIds]
+    .filter(id => !validFormTemplateIds.has(id))
+    .map(id => formTemplates.find(t => t.id === id))
+    .filter(Boolean);
+
+  const completedValidForms = completedForms.filter(f => f.expiresAt > now);
+  const completedExpiredForms = completedForms.filter(f => f.expiresAt <= now);
 
   return (
     <div className="space-y-5">
@@ -105,43 +108,72 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
         </div>
       </div>
 
-      {/* Required Forms for Upcoming */}
-      {requiredFormIds.size > 0 && (
+      {/* Formulare necompletate */}
+      {incompleteForms.length > 0 && (
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">
-            Formulare necesare ({validReqCount}/{requiredFormIds.size})
+            Formulare necompletate ({incompleteForms.length})
           </p>
           <div className="space-y-1.5">
-            {[...requiredFormIds].map(ftId => {
-              const tpl = formTemplates.find(t => t.id === ftId);
-              const isValid = validFormTemplateIds.has(ftId);
-              return (
-                <div key={ftId} className={cn(
-                  'flex items-center justify-between p-2 rounded-md border text-xs',
-                  isValid ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-destructive/30 bg-destructive/5'
-                )}>
-                  <div className="flex items-center gap-2">
-                    {isValid ? (
-                      <CheckSquare className="h-3.5 w-3.5 text-emerald-600" />
-                    ) : (
-                      <ClipboardList className="h-3.5 w-3.5 text-destructive" />
-                    )}
-                    <span className="font-medium">{tpl?.title || ftId}</span>
-                  </div>
-                  <span className={cn(
-                    'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                    isValid ? 'bg-emerald-500/20 text-emerald-700' : 'bg-destructive/20 text-destructive'
-                  )}>
-                    {isValid ? 'Valid' : 'Lipsă'}
-                  </span>
+            {incompleteForms.map(tpl => (
+              <div key={tpl!.id} className="flex items-center justify-between p-2 rounded-md border border-destructive/30 bg-destructive/5 text-xs">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-3.5 w-3.5 text-destructive" />
+                  <span className="font-medium">{tpl!.title}</span>
                 </div>
-              );
-            })}
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/20 text-destructive">
+                  Lipsă
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Upcoming Appointments */}
+      {/* Formulare completate */}
+      <div>
+        <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">
+          Formulare completate ({completedForms.length})
+        </p>
+        {completedForms.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">Niciun formular completat.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {[...completedValidForms, ...completedExpiredForms].map(f => {
+              const tpl = formTemplates.find(t => t.id === f.formTemplateId);
+              const isValid = f.expiresAt > now;
+              return (
+                <div
+                  key={f.id}
+                  className="flex items-center justify-between p-2 rounded-md border border-border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
+                  onClick={() => setActivePanel({ type: 'formViewer', formId: f.id, patientId })}
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 text-primary" />
+                    <div>
+                      <span className="font-medium">{tpl?.title || f.formTemplateId}</span>
+                      <p className="text-[10px] text-muted-foreground">
+                        {new Date(f.completedAt).toLocaleDateString('ro-RO')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                      isValid ? 'bg-emerald-500/20 text-emerald-700' : 'bg-muted text-muted-foreground',
+                    )}>
+                      {isValid ? 'Valid' : 'Expirat'}
+                    </span>
+                    <Eye className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Programări active */}
       <div>
         <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">
           Programări active ({upcomingApts.length})
@@ -188,50 +220,7 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
         )}
       </div>
 
-      {/* Completed Forms */}
-      <div>
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">
-          Formulare completate ({completedForms.length})
-        </p>
-        {completedForms.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic">Niciun formular completat.</p>
-        ) : (
-          <div className="space-y-1.5">
-            {[...validForms, ...expiredForms].map(f => {
-              const tpl = formTemplates.find(t => t.id === f.formTemplateId);
-              const isValid = f.expiresAt > now;
-              return (
-                <div
-                  key={f.id}
-                  className="flex items-center justify-between p-2 rounded-md border border-border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
-                  onClick={() => setActivePanel({ type: 'formViewer', formId: f.id, patientId })}
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5 text-primary" />
-                    <div>
-                      <span className="font-medium">{tpl?.title || f.formTemplateId}</span>
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(f.completedAt).toLocaleDateString('ro-RO')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                      isValid ? 'bg-emerald-500/20 text-emerald-700' : 'bg-muted text-muted-foreground',
-                    )}>
-                      {isValid ? 'Valid' : 'Expirat'}
-                    </span>
-                    <Eye className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Past Appointments */}
+      {/* Istoric programări */}
       {pastApts.length > 0 && (
         <div>
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">
