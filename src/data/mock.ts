@@ -136,6 +136,17 @@ export const formTemplates: FormTemplate[] = [
       { id: "q10", text: "Confirm ca sunt de acord cu tratamentul minorului.", type: "checkbox", required: true },
     ],
   },
+  {
+    id: "ft6",
+    title: "Scrisoare medicală",
+    validityDays: 365,
+    signatureCount: 1,
+    questions: [
+      { id: "q11", text: "Este pacientul sănătos?", type: "checkbox", required: true },
+      { id: "q12", text: "Este pacientul bărbat?", type: "checkbox", required: true },
+      { id: "q13", text: "Observații", type: "text", required: false },
+    ],
+  },
 ];
 
 // ===== Consultation -> Form Requirements =====
