@@ -2,12 +2,13 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { format, addDays, subDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Search, X, PanelLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useUIState } from '@/store/uiStore';
+import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 const SEARCH_PLACEHOLDERS: Record<string, string> = {
@@ -19,6 +20,7 @@ const SEARCH_PLACEHOLDERS: Record<string, string> = {
 
 export default function GlobalToolbar() {
   const { calendar, setCalendar, setActivePanel, searchQuery, setSearchQuery } = useUIState();
+  const { toggleSidebar } = useSidebar();
   const location = useLocation();
   const currentDate = new Date(calendar.selectedDate + 'T00:00:00');
   const isScheduling = location.pathname === '/scheduling';
@@ -35,7 +37,10 @@ export default function GlobalToolbar() {
 
   return (
     <div className="flex items-center justify-between px-5 py-2.5 bg-card border-b border-border shadow-sm">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSidebar}>
+          <PanelLeft className="h-4 w-4" />
+        </Button>
         <span className="text-lg font-bold text-primary tracking-tight">PolBine</span>
         <Button
           size="sm"
