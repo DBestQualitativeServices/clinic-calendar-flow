@@ -9,12 +9,14 @@ import { CheckCircle, FileText } from 'lucide-react';
 import SignatureCanvas from '@/components/tablet/SignatureCanvas';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useUIState } from '@/store/uiStore';
 
 interface ConsultFormPanelProps {
   appointmentId: string;
 }
 
 export default function ConsultFormPanel({ appointmentId }: ConsultFormPanelProps) {
+  const { setSecondaryPanel } = useUIState();
   const { data: apt } = useAppointmentById(appointmentId);
   const { data: patient } = usePatientById(apt?.patients[0]?.patientId ?? '');
   const { data: consultationTypes } = useConsultationTypes();
@@ -40,6 +42,8 @@ export default function ConsultFormPanel({ appointmentId }: ConsultFormPanelProp
     }
     setSubmitted(true);
     toast({ title: 'Scrisoare medicală completată', description: `Formular salvat pentru ${patientName}` });
+    // Auto-close secondary panel after save
+    setTimeout(() => setSecondaryPanel({ type: 'none' }), 1500);
   };
 
   if (submitted) {
