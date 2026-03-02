@@ -8,6 +8,7 @@ export { useCategories } from './queries/useCategories';
 export { useConsultationTypes } from './queries/useConsultationTypes';
 export { useAppointments } from './queries/useAppointments';
 export { useAppointmentById } from './queries/useAppointmentById';
+export { usePatientAppointments } from './queries/usePatientAppointments';
 export { useUnresolvedAppointments } from './queries/useUnresolvedAppointments';
 export { useBlockedSlots } from './queries/useBlockedSlots';
 export { useAvailableSlots } from './queries/useAvailableSlots';

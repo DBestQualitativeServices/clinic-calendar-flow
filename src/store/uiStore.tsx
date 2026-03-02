@@ -7,7 +7,8 @@ export type PanelType =
   | { type: 'booking'; prefill?: { doctorId?: string; date?: string; startTime?: string; appointment?: import('@/types').Appointment } }
   | { type: 'details'; appointmentId: string }
   | { type: 'patientForm'; patientId?: string; onComplete?: () => void }
-  | { type: 'formViewer'; formId: string; patientId: string };
+  | { type: 'formViewer'; formId: string; patientId: string }
+  | { type: 'patientDetails'; patientId: string };
 
 interface UIState {
   calendar: CalendarState;
