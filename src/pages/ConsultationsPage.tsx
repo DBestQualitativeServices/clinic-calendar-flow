@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { format, startOfWeek, addDays, subWeeks, addWeeks } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, CalendarPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDoctors, useAppointments, useBlockedSlots, useConsultationTypes, usePatientById, useCreateBlockedSlot } from '@/hooks/data';
@@ -60,7 +60,9 @@ function DayAppointmentCard({ appointment }: { appointment: import('@/types').Ap
 
 function EmptySlotBlock({ doctorId, date, startTime }: { doctorId: string; date: string; startTime: string }) {
   const { mutate: addBlock } = useCreateBlockedSlot();
+  const { setActivePanel } = useUIState();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'choose' | 'pause'>('choose');
   const [duration, setDuration] = useState('30');
   const [reason, setReason] = useState('');
 
@@ -76,13 +78,24 @@ function EmptySlotBlock({ doctorId, date, startTime }: { doctorId: string; date:
       reason: reason || 'Pauză',
     });
     toast({ title: 'Pauză adăugată', description: `${startTime} — ${minutesToTime(timeToMinutes(startTime) + dur)}` });
+    resetAndClose();
+  };
+
+  const handleBooking = () => {
     setOpen(false);
+    setMode('choose');
+    setActivePanel({ type: 'booking', prefill: { doctorId, date, startTime } });
+  };
+
+  const resetAndClose = () => {
+    setOpen(false);
+    setMode('choose');
     setDuration('30');
     setReason('');
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setMode('choose'); } }}>
       <PopoverTrigger asChild>
         <div
           className="border-b border-border hover:bg-accent/30 transition-colors cursor-pointer relative"
@@ -92,26 +105,38 @@ function EmptySlotBlock({ doctorId, date, startTime }: { doctorId: string; date:
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-52 p-2" align="start" side="right">
-        <div className="flex flex-col gap-2 p-1">
-          <p className="text-xs font-semibold flex items-center gap-1.5">
-            <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-            Pauză de la {startTime}
-          </p>
-          <Select value={duration} onValueChange={setDuration}>
-            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="15">15 min</SelectItem>
-              <SelectItem value="30">30 min</SelectItem>
-              <SelectItem value="60">1 oră</SelectItem>
-              <SelectItem value="rest">Restul zilei</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input className="h-7 text-xs" placeholder="Motiv..." value={reason} onChange={e => setReason(e.target.value)} />
-          <div className="flex gap-1.5">
-            <Button size="sm" className="flex-1 h-7 text-xs" onClick={handleBlock}>Confirmă</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>Anulează</Button>
+        {mode === 'choose' ? (
+          <div className="flex flex-col gap-1.5 p-1">
+            <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{startTime} — {date}</p>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 justify-start" onClick={handleBooking}>
+              <CalendarPlus className="h-3.5 w-3.5" /> Programare nouă
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 justify-start" onClick={() => setMode('pause')}>
+              <Lock className="h-3.5 w-3.5" /> Adaugă pauză
+            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col gap-2 p-1">
+            <p className="text-xs font-semibold flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              Pauză de la {startTime}
+            </p>
+            <Select value={duration} onValueChange={setDuration}>
+              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">15 min</SelectItem>
+                <SelectItem value="30">30 min</SelectItem>
+                <SelectItem value="60">1 oră</SelectItem>
+                <SelectItem value="rest">Restul zilei</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input className="h-7 text-xs" placeholder="Motiv..." value={reason} onChange={e => setReason(e.target.value)} />
+            <div className="flex gap-1.5">
+              <Button size="sm" className="flex-1 h-7 text-xs" onClick={handleBlock}>Confirmă</Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={resetAndClose}>Anulează</Button>
+            </div>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
