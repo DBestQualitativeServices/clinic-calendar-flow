@@ -53,12 +53,12 @@ export const doctors: Doctor[] = [
 
 // ===== Patients =====
 export const patients: Patient[] = [
-  { id: "p-1", firstName: "Ion", lastName: "Marinescu", phone: "0722111222", dateOfBirth: "1985-03-15" },
-  { id: "p-2", firstName: "Ana", lastName: "Popa", phone: "0733222333", dateOfBirth: "1990-07-22" },
-  { id: "p-3", firstName: "Gheorghe", lastName: "Radu", phone: "0744333444", dateOfBirth: "1978-11-03" },
-  { id: "p-4", firstName: "Elena", lastName: "Stoica", phone: "0755444555", dateOfBirth: "1995-01-30" },
-  { id: "p-5", firstName: "Vasile", lastName: "Munteanu", phone: "0766555666", dateOfBirth: "1982-06-18" },
-  { id: "p-6", firstName: "Maria", lastName: "Florescu", phone: "0777666777", dateOfBirth: "1988-09-25" },
+  { id: "p-1", firstName: "Ion", lastName: "Marinescu", phone: "0722111222", dateOfBirth: "1985-03-15", cnp: "1850315400123" },
+  { id: "p-2", firstName: "Ana", lastName: "Popa", phone: "0733222333", dateOfBirth: "1990-07-22", cnp: "2900722410234" },
+  { id: "p-3", firstName: "Gheorghe", lastName: "Radu", phone: "0744333444", dateOfBirth: "1978-11-03", cnp: "1781103420345" },
+  { id: "p-4", firstName: "Elena", lastName: "Stoica", phone: "0755444555", dateOfBirth: "1995-01-30", cnp: "2950130430456" },
+  { id: "p-5", firstName: "Vasile", lastName: "Munteanu", phone: "0766555666", dateOfBirth: "1982-06-18", cnp: "1820618440567" },
+  { id: "p-6", firstName: "Maria", lastName: "Florescu", phone: "0777666777", dateOfBirth: "1988-09-25", cnp: "2880925450678" },
   {
     id: "p-7",
     firstName: "Cristian",
@@ -67,11 +67,11 @@ export const patients: Patient[] = [
     dateOfBirth: "1973-12-08",
     isIncomplete: true,
   },
-  { id: "p-8", firstName: "Daniela", lastName: "Neagu", phone: "0799888999", dateOfBirth: "1992-04-12" },
-  { id: "p-9", firstName: "Adrian", lastName: "Dinu", phone: "0722999000", dateOfBirth: "1980-08-05" },
-  { id: "p-10", firstName: "Simona", lastName: "Tudor", phone: "0733000111", dateOfBirth: "1997-02-28" },
-  { id: "p-11", firstName: "Florin", lastName: "Georgescu", phone: "0744111222", dateOfBirth: "1975-05-20" },
-  { id: "p-12", firstName: "Roxana", lastName: "Lazar", phone: "0755222333", dateOfBirth: "1993-10-14" },
+  { id: "p-8", firstName: "Daniela", lastName: "Neagu", phone: "0799888999", dateOfBirth: "1992-04-12", cnp: "2920412470890" },
+  { id: "p-9", firstName: "Adrian", lastName: "Dinu", phone: "0722999000", dateOfBirth: "1980-08-05", cnp: "1800805480901" },
+  { id: "p-10", firstName: "Simona", lastName: "Tudor", phone: "0733000111", dateOfBirth: "1997-02-28", cnp: "2970228490012" },
+  { id: "p-11", firstName: "Florin", lastName: "Georgescu", phone: "0744111222", dateOfBirth: "1975-05-20", cnp: "1750520400123" },
+  { id: "p-12", firstName: "Roxana", lastName: "Lazar", phone: "0755222333", dateOfBirth: "1993-10-14", cnp: "2931014410234" },
   {
     id: "p-13",
     firstName: "Mihai",
@@ -80,8 +80,8 @@ export const patients: Patient[] = [
     dateOfBirth: "1986-07-01",
     isIncomplete: true,
   },
-  { id: "p-14", firstName: "Andreea", lastName: "Matei", phone: "0777444555", dateOfBirth: "1991-03-09" },
-  { id: "p-15", firstName: "Dan", lastName: "Preda", phone: "0788555666", dateOfBirth: "1970-11-17" },
+  { id: "p-14", firstName: "Andreea", lastName: "Matei", phone: "0777444555", dateOfBirth: "1991-03-09", cnp: "2910309430456" },
+  { id: "p-15", firstName: "Dan", lastName: "Preda", phone: "0788555666", dateOfBirth: "1970-11-17", cnp: "1701117440567" },
 ];
 
 // ===== Form Templates =====
