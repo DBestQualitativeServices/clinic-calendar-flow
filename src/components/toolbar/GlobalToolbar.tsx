@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { format, addDays, subDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
@@ -21,6 +21,8 @@ export default function GlobalToolbar() {
   const location = useLocation();
   const currentDate = new Date(calendar.selectedDate + 'T00:00:00');
   const isScheduling = location.pathname === '/scheduling';
+
+  useEffect(() => { setSearchQuery(''); }, [location.pathname, setSearchQuery]);
 
   const navigateDay = (dir: number) => {
     const newDate = dir > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1);
