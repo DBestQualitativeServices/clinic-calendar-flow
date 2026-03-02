@@ -7,3 +7,5 @@ export * from '../mock';
 //
 // Faza 2 (integrare): decomentează și comentează linia de sus
 // export * from '../api';
+//
+// Ambele exportă EXACT aceleași simboluri — comutarea e o singură linie.
