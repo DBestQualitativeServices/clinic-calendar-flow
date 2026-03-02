@@ -38,7 +38,20 @@ export default function BookingPanel({ prefill }: BookingPanelProps) {
   const { data: allConsultationTypes } = useConsultationTypes();
   const pf = prefill?.prefill;
 
-  const [patientEntries, setPatientEntries] = useState<PatientEntry[]>([createEmptyPatientEntry()]);
+  const [patientEntries, setPatientEntries] = useState<PatientEntry[]>(() => {
+    if (pf?.appointment?.patients?.[0]?.patientId) {
+      const ap = pf.appointment.patients[0];
+      return [{
+        patientId: ap.patientId,
+        isNew: false,
+        newName: '',
+        newPhone: '',
+        newDob: '',
+        consultations: ap.consultations.map(c => ({ categoryId: '', typeId: c.consultationTypeId, duration: c.durationMinutes })),
+      }];
+    }
+    return [createEmptyPatientEntry()];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearchIdx, setActiveSearchIdx] = useState(0);
 
