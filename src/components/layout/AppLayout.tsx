@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import SidebarNav from './SidebarNav';
+import PanelContainer from '@/components/panels/PanelContainer';
 
 export default function AppLayout() {
   const defaultOpen = localStorage.getItem('sidebar-open') !== 'false';
@@ -17,6 +18,7 @@ export default function AppLayout() {
           <Outlet />
         </div>
       </div>
+      <PanelContainer />
     </SidebarProvider>
   );
 }

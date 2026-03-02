@@ -2,7 +2,6 @@ import React from 'react';
 import GlobalToolbar from '@/components/toolbar/GlobalToolbar';
 import NoShowBanner from '@/components/toolbar/NoShowBanner';
 import CalendarGrid from '@/components/calendar/CalendarGrid';
-import PanelContainer from '@/components/panels/PanelContainer';
 
 const Index = () => {
   return (
@@ -10,7 +9,6 @@ const Index = () => {
       <GlobalToolbar />
       <NoShowBanner />
       <CalendarGrid />
-      <PanelContainer />
     </div>
   );
 };
