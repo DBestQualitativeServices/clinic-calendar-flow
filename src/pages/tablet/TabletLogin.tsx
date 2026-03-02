@@ -9,9 +9,12 @@ export default function TabletLogin() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { data: sessionData } = useTabletSessionByCode(code);
+  // Only query when we have a full 4-digit code
+  const queryCode = code.length === 4 ? code : '';
+  const { data: sessionData } = useTabletSessionByCode(queryCode);
 
   const handleAccess = () => {
+    if (code.length < 4) return;
     if (sessionData) {
       setError('');
       navigate(`/tablet/forms?code=${code}`);
