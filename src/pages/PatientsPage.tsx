@@ -4,20 +4,13 @@ import { useUIState } from '@/store/uiStore';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { Search, Users, Phone, Calendar, AlertTriangle, FileText } from 'lucide-react';
+import PatientAvatar from '@/components/ui/patient-avatar';
+import ValidityBadge from '@/components/ui/validity-badge';
+import { cn, getAge } from '@/lib/utils';
+import { Search, Users, Phone, Calendar, AlertTriangle } from 'lucide-react';
 import type { Patient, CompletedForm } from '@/types';
 
 type FilterType = 'all' | 'incomplete' | 'with_forms' | 'no_forms';
-
-function getAge(dob: string): number {
-  const birth = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
-}
 
 export default function PatientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,9 +123,7 @@ export default function PatientsPage() {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
-                            {p.lastName[0]}{p.firstName[0]}
-                          </div>
+                          <PatientAvatar firstName={p.firstName} lastName={p.lastName} size="sm" />
                           <div>
                             <span className="font-medium">{p.lastName} {p.firstName}</span>
                             {p.isIncomplete && (
@@ -160,7 +151,7 @@ export default function PatientsPage() {
                         {forms.length > 0 ? (
                           <div className="flex items-center gap-1.5">
                             {validCount > 0 && (
-                              <Badge variant="secondary" className="text-[10px] font-bold gap-1 bg-emerald-500/15 text-emerald-700 border-0">
+                              <Badge variant="secondary" className="text-[10px] font-bold gap-1 bg-status-valid/15 text-status-valid-foreground border-0">
                                 {validCount} valide
                               </Badge>
                             )}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useUpdateAppointmentStatus } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
 import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
+import { STATUS_CONFIG } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -10,15 +11,6 @@ import { LogIn, Play, CheckCircle, RotateCcw, X } from 'lucide-react';
 import type { AppointmentStatus } from '@/types';
 import FinalizationModal from '@/components/modals/FinalizationModal';
 import FormsStatusPanel from '@/components/forms/FormsStatusPanel';
-
-const statusBadge: Record<string, { label: string; cls: string }> = {
-  programat: { label: 'Programat', cls: 'bg-status-programat text-white' },
-  sosit: { label: 'Sosit', cls: 'bg-status-sosit text-white' },
-  in_consult: { label: 'În consult', cls: 'bg-status-in-consult text-white' },
-  finalizat: { label: 'Finalizat', cls: 'bg-status-finalizat text-foreground' },
-  anulat: { label: 'Anulat', cls: 'bg-status-anulat text-foreground' },
-  no_show: { label: 'No-show', cls: 'bg-status-no-show text-white' },
-};
 
 function PatientBlock({ patientId, consultations }: { patientId: string; consultations: { consultationTypeId: string; durationMinutes: number }[] }) {
   const { data: patient } = usePatientById(patientId);
@@ -51,7 +43,7 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   if (!apt) return <p className="text-sm text-muted-foreground p-4">Programarea nu a fost găsită.</p>;
 
   const doctor = doctors.find(d => d.id === apt.doctorId);
-  const badge = statusBadge[apt.status];
+  const badge = STATUS_CONFIG[apt.status];
   const now = new Date().toISOString();
 
   const transition = (status: AppointmentStatus, action: string) => {
@@ -62,7 +54,7 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
         timeline: [...apt.timeline, { timestamp: now, action, actor: 'Recepție' }],
       },
     });
-    toast({ title: `Status schimbat: ${statusBadge[status].label}` });
+    toast({ title: `Status schimbat: ${STATUS_CONFIG[status].label}` });
   };
 
   return (

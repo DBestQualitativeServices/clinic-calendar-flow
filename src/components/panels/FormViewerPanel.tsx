@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCompletedForms, useFormTemplates, usePatientById } from '@/hooks/data';
 import { cn } from '@/lib/utils';
+import ValidityBadge from '@/components/ui/validity-badge';
 import { CheckSquare, Square, Type, FileText } from 'lucide-react';
 
 export default function FormViewerPanel({ formId, patientId }: { formId: string; patientId: string }) {
@@ -22,12 +23,7 @@ export default function FormViewerPanel({ formId, patientId }: { formId: string;
     <div className="space-y-5">
       {/* Status + patient */}
       <div className="flex items-center justify-between">
-        <span className={cn(
-          'text-xs px-3 py-1 rounded-full font-semibold',
-          isValid ? 'bg-emerald-500/20 text-emerald-700' : 'bg-muted text-muted-foreground',
-        )}>
-          {isValid ? 'Valid' : 'Expirat'}
-        </span>
+        <ValidityBadge valid={isValid} />
         <span className="text-xs text-muted-foreground">
           {form.signatures.length}/{template.signatureCount} semnături
         </span>

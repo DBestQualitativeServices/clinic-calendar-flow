@@ -7,19 +7,11 @@ import { usePatientById, useUpdateAppointmentStatus, useCheckinAppointment, useC
 import { formatPatientName } from '@/lib/calendar-utils';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { STATUS_CONFIG } from '@/lib/constants';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Eye, LogIn, Play, RotateCcw, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import FinalizationModal from '@/components/modals/FinalizationModal';
 import FormsStatusBadge from '@/components/forms/FormsStatusBadge';
-
-const statusBadge: Record<string, { label: string; cls: string }> = {
-  programat: { label: 'Programat', cls: 'bg-status-programat text-white' },
-  sosit: { label: 'Sosit', cls: 'bg-status-sosit text-white' },
-  in_consult: { label: 'În consult', cls: 'bg-status-in-consult text-white' },
-  finalizat: { label: 'Finalizat', cls: 'bg-status-finalizat text-foreground' },
-  anulat: { label: 'Anulat', cls: 'bg-status-anulat text-foreground' },
-  no_show: { label: 'No-show', cls: 'bg-status-no-show text-white' },
-};
 
 interface AppointmentPopoverProps {
   appointment: Appointment;
@@ -36,7 +28,7 @@ export default function AppointmentPopover({ appointment, children }: Appointmen
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
 
   const apt = appointment;
-  const badge = statusBadge[apt.status];
+  const badge = STATUS_CONFIG[apt.status];
   const { data: patient } = usePatientById(apt.patients[0]?.patientId);
   const patientName = patient ? formatPatientName(patient) : 'Necunoscut';
   const isIncomplete = patient?.isIncomplete;

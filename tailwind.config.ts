@@ -64,6 +64,10 @@ export default {
           anulat: "hsl(var(--status-anulat))",
           "no-show": "hsl(var(--status-no-show))",
           blocked: "hsl(var(--status-blocked))",
+          valid: "hsl(var(--status-valid))",
+          "valid-foreground": "hsl(var(--status-valid-foreground))",
+          expired: "hsl(var(--status-expired))",
+          "expired-foreground": "hsl(var(--status-expired-foreground))",
         },
         spec: {
           estetica: "hsl(var(--spec-estetica))",
