@@ -4,7 +4,7 @@ import { useMockData } from '@/hooks/mock/MockDataProvider';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Copy, RefreshCw, Tablet } from 'lucide-react';
+import { RefreshCw, Tablet } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface FormsStatusPanelProps {
@@ -41,12 +41,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
       generateCode();
     };
 
-    const copyCode = () => {
-      if (session) {
-        navigator.clipboard.writeText(session.accessCode);
-        toast({ title: 'Cod copiat!' });
-      }
-    };
 
     return (
       <div className="space-y-3">
@@ -96,9 +90,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
                 <Tablet className="h-4 w-4 text-primary" />
                 <span className="text-lg font-bold tracking-widest text-primary">{session.accessCode}</span>
               </div>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={copyCode}>
-                <Copy className="h-3 w-3" /> Copiază
-              </Button>
               <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={regenerateCode}>
                 <RefreshCw className="h-3 w-3" /> Regenerează
               </Button>

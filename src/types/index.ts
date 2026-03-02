@@ -11,6 +11,7 @@ export interface ConsultationType {
   categoryId: string;
   name: string; // e.g. "Dermapen", "Chirurgie", "Consultație"
   defaultDurationMinutes: number; // default 15, customizable per doctor
+  priceRON: number; // price in RON
 }
 
 // ===== Doctor =====
