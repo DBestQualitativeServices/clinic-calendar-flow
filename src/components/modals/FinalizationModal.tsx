@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Printer, CalendarPlus, Info } from 'lucide-react';
+import { CheckCircle, Printer, CalendarPlus, Info, AlertTriangle } from 'lucide-react';
 import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
 
 interface FinalizationModalProps {
@@ -18,6 +18,7 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   const { data: apt } = useAppointmentById(appointmentId);
   const { data: doctors } = useDoctors();
   const { data: consultationTypes } = useConsultationTypes();
+  const { data: formsStatus } = useFormsStatus(appointmentId);
   const { mutate: completeAppointment } = useCompleteAppointment();
   const { setActivePanel } = useUIState();
 
@@ -27,6 +28,7 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
 
   const doctor = doctors.find(d => d.id === apt.doctorId);
   const allConsultations = apt.patients.flatMap(p => p.consultations);
+  const hasMissingForms = formsStatus && formsStatus.missingTemplateIds.length > 0;
 
   const handleFinalize = () => {
     completeAppointment({ appointmentId: apt.id });
@@ -69,6 +71,19 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
             })}
           </div>
         </div>
+
+        {/* Forms warning */}
+        {hasMissingForms && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-destructive">Formulare incomplete!</p>
+              <p className="text-[11px] text-destructive/80 mt-0.5">
+                {formsStatus.missingTemplateIds.length} formular(e) nu au fost completate. Finalizarea fără formulare complete poate genera probleme legale.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-3 py-2">
           <div className="flex items-center justify-between gap-2">
