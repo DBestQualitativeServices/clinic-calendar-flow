@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useFormsStatus, useFormTemplates, useCompleteAppointment } from '@/hooks/data';
+import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useFormsStatus, useFormTemplates, useCompleteAppointment, useCreateTabletSession } from '@/hooks/data';
 import { useMockData } from '@/hooks/mock/MockDataProvider';
 import { useUIState } from '@/store/uiStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -21,8 +21,9 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
   const { data: consultationTypes } = useConsultationTypes();
   const { data: formsStatus } = useFormsStatus(appointmentId);
   const { mutate: completeAppointment } = useCompleteAppointment();
+  const { mutate: addTabletSession } = useCreateTabletSession();
   const { setActivePanel } = useUIState();
-  const { tabletSessions } = useMockData();
+  const { tabletSessions, patients: allPatients } = useMockData();
 
   const [documentsPrinted, setDocumentsPrinted] = useState(false);
 
@@ -97,7 +98,7 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
                 </p>
               </div>
             </div>
-            {session && (
+            {session ? (
               <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/30">
                 <Tablet className="h-5 w-5 text-primary" />
                 <div>
@@ -105,6 +106,20 @@ export default function FinalizationModal({ appointmentId, open, onOpenChange }:
                   <p className="text-[9px] text-primary/60">Cod tabletă — completați formularele acum</p>
                 </div>
               </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5"
+                onClick={() => {
+                  const p = allPatients.find(pt => pt.id === patientId);
+                  const code = p?.cnp ? p.cnp.slice(-4) : String(Math.floor(1000 + Math.random() * 9000));
+                  addTabletSession({ accessCode: code, appointmentId, patientId, active: true, createdAt: new Date().toISOString() });
+                  toast({ title: `Cod generat: ${code}` });
+                }}
+              >
+                <Tablet className="h-3.5 w-3.5" /> Generează cod tabletă pentru completare
+              </Button>
             )}
           </div>
         )}
