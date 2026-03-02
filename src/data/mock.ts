@@ -21,19 +21,19 @@ export const categories: SpecializationCategory[] = [
 // ===== Consultation Types =====
 export const consultationTypes: ConsultationType[] = [
   // Estetica
-  { id: "ct-dermapen", categoryId: "cat-estetica", name: "Dermapen", defaultDurationMinutes: 30 },
-  { id: "ct-botox", categoryId: "cat-estetica", name: "Botox", defaultDurationMinutes: 30 },
-  { id: "ct-acid-hialuronic", categoryId: "cat-estetica", name: "Acid hialuronic", defaultDurationMinutes: 45 },
-  { id: "ct-peeling", categoryId: "cat-estetica", name: "Peeling chimic", defaultDurationMinutes: 30 },
+  { id: "ct-dermapen", categoryId: "cat-estetica", name: "Dermapen", defaultDurationMinutes: 30, priceRON: 350 },
+  { id: "ct-botox", categoryId: "cat-estetica", name: "Botox", defaultDurationMinutes: 30, priceRON: 500 },
+  { id: "ct-acid-hialuronic", categoryId: "cat-estetica", name: "Acid hialuronic", defaultDurationMinutes: 45, priceRON: 800 },
+  { id: "ct-peeling", categoryId: "cat-estetica", name: "Peeling chimic", defaultDurationMinutes: 30, priceRON: 250 },
   // Medicala
-  { id: "ct-chirurgie", categoryId: "cat-medicala", name: "Chirurgie minora", defaultDurationMinutes: 60 },
-  { id: "ct-dermatoscopie", categoryId: "cat-medicala", name: "Dermatoscopie", defaultDurationMinutes: 30 },
-  { id: "ct-crioterapie", categoryId: "cat-medicala", name: "Crioterapie", defaultDurationMinutes: 15 },
-  { id: "ct-biopsie", categoryId: "cat-medicala", name: "Biopsie", defaultDurationMinutes: 30 },
+  { id: "ct-chirurgie", categoryId: "cat-medicala", name: "Chirurgie minora", defaultDurationMinutes: 60, priceRON: 600 },
+  { id: "ct-dermatoscopie", categoryId: "cat-medicala", name: "Dermatoscopie", defaultDurationMinutes: 30, priceRON: 200 },
+  { id: "ct-crioterapie", categoryId: "cat-medicala", name: "Crioterapie", defaultDurationMinutes: 15, priceRON: 150 },
+  { id: "ct-biopsie", categoryId: "cat-medicala", name: "Biopsie", defaultDurationMinutes: 30, priceRON: 300 },
   // Generala
-  { id: "ct-consultatie", categoryId: "cat-generala", name: "Consultatie", defaultDurationMinutes: 15 },
-  { id: "ct-control", categoryId: "cat-generala", name: "Control", defaultDurationMinutes: 15 },
-  { id: "ct-gdpr", categoryId: "cat-generala", name: "Consult GDPR", defaultDurationMinutes: 15 },
+  { id: "ct-consultatie", categoryId: "cat-generala", name: "Consultatie", defaultDurationMinutes: 15, priceRON: 150 },
+  { id: "ct-control", categoryId: "cat-generala", name: "Control", defaultDurationMinutes: 15, priceRON: 100 },
+  { id: "ct-gdpr", categoryId: "cat-generala", name: "Consult GDPR", defaultDurationMinutes: 15, priceRON: 0 },
 ];
 
 // ===== Doctors =====
