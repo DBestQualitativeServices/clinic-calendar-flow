@@ -154,7 +154,7 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
                 <div
                   key={f.id}
                   className="flex items-center justify-between p-2 rounded-md border border-border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
-                  onClick={() => setActivePanel({ type: 'formViewer', formId: f.id, patientId })}
+                  onClick={() => setSecondaryPanel({ type: 'formViewer', formId: f.id, patientId })}
                 >
                   <div className="flex items-center gap-2">
                     <FileText className="h-3.5 w-3.5 text-primary" />
@@ -198,7 +198,7 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
                 <div
                   key={apt.id}
                   className="p-2.5 rounded-md border border-border bg-muted/20 space-y-1.5 cursor-pointer hover:bg-muted/40 transition-colors"
-                  onClick={() => setActivePanel({ type: 'details', appointmentId: apt.id })}
+                  onClick={() => setSecondaryPanel({ type: 'details', appointmentId: apt.id })}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs">
@@ -242,7 +242,7 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
                 <div
                   key={apt.id}
                   className="flex items-center justify-between p-2 rounded-md border border-border text-xs cursor-pointer hover:bg-muted/40 transition-colors"
-                  onClick={() => setActivePanel({ type: 'details', appointmentId: apt.id })}
+                  onClick={() => setSecondaryPanel({ type: 'details', appointmentId: apt.id })}
                 >
                   <div>
                     <span className="font-medium">{apt.date}</span>
