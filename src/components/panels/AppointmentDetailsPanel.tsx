@@ -193,7 +193,7 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   const badge = STATUS_CONFIG[apt.status];
   const now = new Date().toISOString();
   const isInConsult = apt.status === 'in_consult';
-  const showPatientHeader = ['sosit', 'in_consult', 'finalizat'].includes(apt.status);
+  
 
   const doctorCategoryIds = doctor?.categoryIds || [];
   const availableConsultTypes = allConsultationTypes.filter(ct => doctorCategoryIds.includes(ct.categoryId));
@@ -268,14 +268,12 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
 
       {apt.patients.map((ap, idx) => (
         <div key={idx} className="space-y-1.5">
-          {showPatientHeader && (
-            <PatientHeader
+          <PatientHeader
               appointmentId={apt.id}
               patientId={ap.patientId}
               formsReady={patientFormsReady[idx]}
               onRefreshForms={handleRefreshForms}
-            />
-          )}
+          />
           <PatientBlock
             patientId={ap.patientId}
             consultations={ap.consultations}
@@ -315,8 +313,8 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
 
       {isInConsult && (
         <div className="p-3 rounded-md border border-border space-y-2">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Discount / Spor</p>
-          <div className="flex items-center gap-2">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider text-center">Discount / Spor</p>
+          <div className="flex items-center justify-center gap-2">
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => setDiscountAmount(prev => prev - 5)}>
                 <Minus className="h-3 w-3" />

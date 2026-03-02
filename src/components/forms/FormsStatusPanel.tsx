@@ -98,17 +98,7 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
         )}
 
         <div className="pt-2 border-t border-border">
-          {session ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 border border-primary/30">
-                <Tablet className="h-4 w-4 text-primary" />
-                <span className="text-lg font-bold tracking-widest text-primary">{session.accessCode}</span>
-              </div>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={regenerateCode}>
-                <RefreshCw className="h-3 w-3" /> Regenerează
-              </Button>
-            </div>
-          ) : (
+          {!session && (
             <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={generateCode}>
               <Tablet className="h-3.5 w-3.5" /> Generează cod tabletă
             </Button>
