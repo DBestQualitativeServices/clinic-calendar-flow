@@ -1,20 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { usePatients, useFormTemplates, useCompletedForms } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Search, FileText, Eye } from 'lucide-react';
+import { FileText, Eye } from 'lucide-react';
 
 type FilterType = 'all' | 'valid' | 'expired';
 
 export default function FormsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
-  const { setActivePanel } = useUIState();
+  const { searchQuery, setActivePanel } = useUIState();
 
-  const { data: searchResults } = usePatients(searchQuery);
+  const { data: searchResults } = usePatients(searchQuery.length >= 2 ? searchQuery : undefined);
   const filteredSearchResults = useMemo(
     () => (searchQuery.length >= 2 && !selectedPatientId ? searchResults.slice(0, 8) : []),
     [searchResults, searchQuery, selectedPatientId]
@@ -44,8 +42,13 @@ export default function FormsPage() {
     }
   };
 
+  // Reset selection when search changes
+  React.useEffect(() => {
+    if (searchQuery.length < 2) setSelectedPatientId(null);
+  }, [searchQuery]);
+
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background">
+    <div className="flex flex-col flex-1 overflow-hidden bg-background">
       <div className="border-b border-border p-4">
         <div className="flex items-center gap-3">
           <FileText className="h-5 w-5 text-primary" />
@@ -54,41 +57,28 @@ export default function FormsPage() {
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Caută pacient (nume, telefon, CNP)..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={e => {
-              setSearchQuery(e.target.value);
-              if (e.target.value.length < 2) setSelectedPatientId(null);
-            }}
-          />
-          {filteredSearchResults.length > 0 && (
-            <div className="absolute z-10 top-full mt-1 w-full border border-border rounded-md bg-popover shadow-lg overflow-hidden">
-              {filteredSearchResults.map(p => (
-                <button
-                  key={p.id}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors"
-                  onClick={() => {
-                    setSelectedPatientId(p.id);
-                    setSearchQuery(`${p.lastName} ${p.firstName}`);
-                  }}
-                >
-                  <span className="font-medium">{p.lastName} {p.firstName}</span>
-                  <span className="text-muted-foreground ml-2">{p.phone}</span>
-                  {p.cnp && <span className="text-muted-foreground ml-2 text-xs">CNP: {p.cnp}</span>}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Dropdown results from global search */}
+        {filteredSearchResults.length > 0 && (
+          <div className="border border-border rounded-md bg-popover shadow-lg overflow-hidden max-w-md">
+            <p className="px-4 py-2 text-xs text-muted-foreground border-b border-border">Selectează un pacient:</p>
+            {filteredSearchResults.map(p => (
+              <button
+                key={p.id}
+                className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors"
+                onClick={() => setSelectedPatientId(p.id)}
+              >
+                <span className="font-medium">{p.lastName} {p.firstName}</span>
+                <span className="text-muted-foreground ml-2">{p.phone}</span>
+                {p.cnp && <span className="text-muted-foreground ml-2 text-xs">CNP: {p.cnp}</span>}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {!selectedPatientId && (
+        {!selectedPatientId && filteredSearchResults.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <FileText className="h-12 w-12 mb-3 opacity-30" />
-            <p className="text-sm">Caută un pacient pentru a vedea formularele</p>
+            <p className="text-sm">Caută un pacient în bara de sus pentru a vedea formularele</p>
           </div>
         )}
 

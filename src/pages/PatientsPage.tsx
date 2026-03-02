@@ -1,23 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { usePatients, useFormTemplates, useCompletedForms } from '@/hooks/data';
+import React, { useMemo } from 'react';
+import { usePatients, useCompletedForms } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PatientAvatar from '@/components/ui/patient-avatar';
-import ValidityBadge from '@/components/ui/validity-badge';
 import { cn, getAge } from '@/lib/utils';
-import { Search, Users, Phone, Calendar, AlertTriangle } from 'lucide-react';
-import type { Patient, CompletedForm } from '@/types';
+import { Users, Phone, Calendar, AlertTriangle } from 'lucide-react';
+import type { CompletedForm } from '@/types';
 
 type FilterType = 'all' | 'incomplete' | 'with_forms' | 'no_forms';
 
 export default function PatientsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<FilterType>('all');
-  const { setActivePanel } = useUIState();
+  const [filter, setFilter] = React.useState<FilterType>('all');
+  const { searchQuery, setActivePanel } = useUIState();
 
-  const { data: allPatients } = usePatients(searchQuery.length >= 2 ? searchQuery : undefined);
+  const query = searchQuery.length >= 2 ? searchQuery : undefined;
+  const { data: allPatients } = usePatients(query);
   const { data: allForms } = useCompletedForms('');
 
   const now = new Date().toISOString();
@@ -53,7 +51,7 @@ export default function PatientsPage() {
   ];
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background">
+    <div className="flex flex-col flex-1 overflow-hidden bg-background">
       <div className="border-b border-border p-4">
         <div className="flex items-center gap-3">
           <Users className="h-5 w-5 text-primary" />
@@ -65,29 +63,18 @@ export default function PatientsPage() {
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Caută pacient (nume, telefon, CNP)..."
-              className="pl-9"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-1">
-            {filters.map(f => (
-              <Button
-                key={f.key}
-                variant={filter === f.key ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setFilter(f.key)}
-              >
-                {f.label}
-              </Button>
-            ))}
-          </div>
+        <div className="flex gap-1">
+          {filters.map(f => (
+            <Button
+              key={f.key}
+              variant={filter === f.key ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+            </Button>
+          ))}
         </div>
 
         {filteredPatients.length === 0 ? (

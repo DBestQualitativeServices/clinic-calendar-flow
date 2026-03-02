@@ -14,9 +14,11 @@ interface UIState {
   calendar: CalendarState;
   activePanel: PanelType;
   secondaryPanel: PanelType;
+  searchQuery: string;
   setCalendar: (update: Partial<CalendarState>) => void;
   setActivePanel: (panel: PanelType) => void;
   setSecondaryPanel: (panel: PanelType) => void;
+  setSearchQuery: (q: string) => void;
 }
 
 const UIContext = createContext<UIState | null>(null);
@@ -28,6 +30,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   });
   const [activePanel, setActivePanelState] = useState<PanelType>({ type: 'none' });
   const [secondaryPanel, setSecondaryPanelState] = useState<PanelType>({ type: 'none' });
+  const [searchQuery, setSearchQueryState] = useState('');
 
   const setCalendar = useCallback((update: Partial<CalendarState>) => {
     setCalendarState(prev => ({ ...prev, ...update }));
@@ -45,8 +48,12 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setSecondaryPanelState(panel);
   }, []);
 
+  const setSearchQuery = useCallback((q: string) => {
+    setSearchQueryState(q);
+  }, []);
+
   return (
-    <UIContext.Provider value={{ calendar, activePanel, secondaryPanel, setCalendar, setActivePanel, setSecondaryPanel }}>
+    <UIContext.Provider value={{ calendar, activePanel, secondaryPanel, searchQuery, setCalendar, setActivePanel, setSecondaryPanel, setSearchQuery }}>
       {children}
     </UIContext.Provider>
   );

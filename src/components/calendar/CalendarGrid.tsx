@@ -17,7 +17,8 @@ export default function CalendarGrid() {
   const { data: consultationTypes } = useConsultationTypes();
   const timeSlots = useMemo(() => generateTimeSlots(), []);
 
-  const searchQuery = calendar.searchQuery?.toLowerCase().trim() ?? '';
+  const { searchQuery: rawSearch } = useUIState();
+  const searchQuery = rawSearch.toLowerCase().trim();
 
   const matchingAppointmentIds = useMemo(() => {
     if (!searchQuery) return new Set<string>();

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { format, addDays, subDays } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, CalendarIcon, Search, X } from 'lucide-react';
@@ -9,9 +10,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { useUIState } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 
+const SEARCH_PLACEHOLDERS: Record<string, string> = {
+  '/scheduling': 'Caută pacient, consultație, doctor...',
+  '/patients': 'Caută pacient (nume, telefon, CNP)...',
+  '/forms': 'Caută pacient pentru formulare...',
+};
+
 export default function GlobalToolbar() {
-  const { calendar, setCalendar, setActivePanel } = useUIState();
+  const { calendar, setCalendar, setActivePanel, searchQuery, setSearchQuery } = useUIState();
+  const location = useLocation();
   const currentDate = new Date(calendar.selectedDate + 'T00:00:00');
+  const isScheduling = location.pathname === '/scheduling';
 
   const navigateDay = (dir: number) => {
     const newDate = dir > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1);
@@ -19,7 +28,7 @@ export default function GlobalToolbar() {
   };
 
   const isToday = calendar.selectedDate === new Date().toISOString().split('T')[0];
-  const weeklyDoctor = calendar.viewMode === 'weekly' ? undefined : null;
+  const placeholder = SEARCH_PLACEHOLDERS[location.pathname] || 'Caută...';
 
   return (
     <div className="flex items-center justify-between px-5 py-2.5 bg-card border-b border-border shadow-sm">
@@ -39,14 +48,14 @@ export default function GlobalToolbar() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Caută pacient, consultație, doctor..."
-            value={calendar.searchQuery ?? ''}
-            onChange={(e) => setCalendar({ searchQuery: e.target.value || undefined })}
+            placeholder={placeholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8 h-8 text-xs"
           />
-          {calendar.searchQuery && (
+          {searchQuery && (
             <button
-              onClick={() => setCalendar({ searchQuery: undefined })}
+              onClick={() => setSearchQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
@@ -56,42 +65,46 @@ export default function GlobalToolbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        {!isToday ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-primary w-8"
-            onClick={() => setCalendar({ selectedDate: new Date().toISOString().split('T')[0] })}
-          >
-            Azi
-          </Button>
-        ) : (
-          <div className="w-8" />
-        )}
+        {isScheduling && (
+          <>
+            {!isToday ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-primary w-8"
+                onClick={() => setCalendar({ selectedDate: new Date().toISOString().split('T')[0] })}
+              >
+                Azi
+              </Button>
+            ) : (
+              <div className="w-8" />
+            )}
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className={cn("gap-1.5 font-medium w-[220px] justify-start", isToday && "ring-2 ring-primary/30")}>
-              <CalendarIcon className="h-3.5 w-3.5" />
-              {format(currentDate, "EEEE, d MMMM yyyy", { locale: ro })}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("gap-1.5 font-medium w-[220px] justify-start", isToday && "ring-2 ring-primary/30")}>
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {format(currentDate, "EEEE, d MMMM yyyy", { locale: ro })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={currentDate}
+                  onSelect={(d) => d && setCalendar({ selectedDate: d.toISOString().split('T')[0] })}
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(-1)}>
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="center">
-            <Calendar
-              mode="single"
-              selected={currentDate}
-              onSelect={(d) => d && setCalendar({ selectedDate: d.toISOString().split('T')[0] })}
-              className="p-3 pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(-1)}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(1)}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
