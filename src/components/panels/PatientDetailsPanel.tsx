@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   Phone, Calendar, Mail, MapPin, CreditCard, AlertTriangle,
-  FileText, CheckSquare, Clock, Eye, ClipboardList,
+  FileText, CheckSquare, Clock, Eye, ClipboardList, Pencil,
 } from 'lucide-react';
 import { consultFormRequirements } from '@/data/mock';
 import type { Appointment, CompletedForm } from '@/types';
@@ -43,7 +43,7 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
   const { data: formTemplates } = useFormTemplates();
   const { data: consultationTypes } = useConsultationTypes();
   const { data: doctors } = useDoctors();
-  const { setActivePanel } = useUIState();
+  const { setActivePanel, setSecondaryPanel } = useUIState();
 
   const now = new Date().toISOString();
   const today = now.split('T')[0];
@@ -86,11 +86,11 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
     <div className="space-y-5">
       {/* Patient Info */}
       <div className="p-3 rounded-md bg-accent/50 border border-border space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1">
           <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
             {patient.lastName[0]}{patient.firstName[0]}
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-bold">{patient.lastName} {patient.firstName}</p>
             {patient.isIncomplete && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-destructive">
@@ -98,6 +98,14 @@ export default function PatientDetailsPanel({ patientId }: { patientId: string }
               </span>
             )}
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={() => setSecondaryPanel({ type: 'patientForm', patientId, onComplete: () => setSecondaryPanel({ type: 'none' }) })}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
         </div>
         <div className="space-y-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-2"><Phone className="h-3 w-3" /> {patient.phone}</div>

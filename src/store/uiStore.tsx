@@ -13,8 +13,10 @@ export type PanelType =
 interface UIState {
   calendar: CalendarState;
   activePanel: PanelType;
+  secondaryPanel: PanelType;
   setCalendar: (update: Partial<CalendarState>) => void;
   setActivePanel: (panel: PanelType) => void;
+  setSecondaryPanel: (panel: PanelType) => void;
 }
 
 const UIContext = createContext<UIState | null>(null);
@@ -24,14 +26,27 @@ export function UIProvider({ children }: { children: ReactNode }) {
     viewMode: 'daily',
     selectedDate: new Date().toISOString().split('T')[0],
   });
-  const [activePanel, setActivePanel] = useState<PanelType>({ type: 'none' });
+  const [activePanel, setActivePanelState] = useState<PanelType>({ type: 'none' });
+  const [secondaryPanel, setSecondaryPanelState] = useState<PanelType>({ type: 'none' });
 
   const setCalendar = useCallback((update: Partial<CalendarState>) => {
     setCalendarState(prev => ({ ...prev, ...update }));
   }, []);
 
+  const setActivePanel = useCallback((panel: PanelType) => {
+    setActivePanelState(panel);
+    // Close secondary when primary changes
+    if (panel.type === 'none') {
+      setSecondaryPanelState({ type: 'none' });
+    }
+  }, []);
+
+  const setSecondaryPanel = useCallback((panel: PanelType) => {
+    setSecondaryPanelState(panel);
+  }, []);
+
   return (
-    <UIContext.Provider value={{ calendar, activePanel, setCalendar, setActivePanel }}>
+    <UIContext.Provider value={{ calendar, activePanel, secondaryPanel, setCalendar, setActivePanel, setSecondaryPanel }}>
       {children}
     </UIContext.Provider>
   );
