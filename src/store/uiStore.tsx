@@ -8,7 +8,8 @@ export type PanelType =
   | { type: 'details'; appointmentId: string }
   | { type: 'patientForm'; patientId?: string; onComplete?: () => void }
   | { type: 'formViewer'; formId: string; patientId: string }
-  | { type: 'patientDetails'; patientId: string };
+  | { type: 'patientDetails'; patientId: string }
+  | { type: 'consultForm'; appointmentId: string };
 
 interface UIState {
   calendar: CalendarState;

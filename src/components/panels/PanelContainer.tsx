@@ -6,6 +6,7 @@ import AppointmentDetailsPanel from './AppointmentDetailsPanel';
 import PatientFormPanel from './PatientFormPanel';
 import FormViewerPanel from './FormViewerPanel';
 import PatientDetailsPanel from './PatientDetailsPanel';
+import ConsultFormPanel from './ConsultFormPanel';
 
 function renderPanel(panel: ReturnType<typeof useUIState>['activePanel'], setActivePanel: ReturnType<typeof useUIState>['setActivePanel']) {
   switch (panel.type) {
@@ -14,6 +15,7 @@ function renderPanel(panel: ReturnType<typeof useUIState>['activePanel'], setAct
     case 'patientForm': return <PatientFormPanel patientId={panel.patientId} onComplete={panel.onComplete} />;
     case 'formViewer': return <FormViewerPanel formId={panel.formId} patientId={panel.patientId} />;
     case 'patientDetails': return <PatientDetailsPanel patientId={panel.patientId} />;
+    case 'consultForm': return <ConsultFormPanel appointmentId={panel.appointmentId} />;
     default: return null;
   }
 }
@@ -24,6 +26,7 @@ const titles: Record<string, string> = {
   patientForm: 'Editare pacient',
   formViewer: 'Vizualizare formular',
   patientDetails: 'Fișa pacientului',
+  consultForm: 'Scrisoare medicală',
 };
 
 export default function PanelContainer() {

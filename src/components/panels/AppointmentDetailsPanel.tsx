@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useUpdateAppointmentStatus } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
 import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { LogIn, Play, CheckCircle, RotateCcw, X } from 'lucide-react';
+import { LogIn, Play, CheckCircle, RotateCcw, X, FileText } from 'lucide-react';
 import type { AppointmentStatus } from '@/types';
 import FinalizationModal from '@/components/modals/FinalizationModal';
 import FormsStatusPanel from '@/components/forms/FormsStatusPanel';
@@ -37,8 +37,15 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   const { data: apt } = useAppointmentById(appointmentId);
   const { data: doctors } = useDoctors();
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
-  const { setActivePanel } = useUIState();
+  const { setActivePanel, setSecondaryPanel } = useUIState();
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
+
+  // Auto-open consult form when appointment is in_consult
+  useEffect(() => {
+    if (apt?.status === 'in_consult') {
+      setSecondaryPanel({ type: 'consultForm', appointmentId });
+    }
+  }, [apt?.status, appointmentId, setSecondaryPanel]);
 
   if (!apt) return <p className="text-sm text-muted-foreground p-4">Programarea nu a fost găsită.</p>;
 
@@ -123,9 +130,18 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
           </Button>
         )}
         {apt.status === 'in_consult' && (
-          <Button className="w-full gap-2" onClick={() => setFinalizeModalOpen(true)}>
-            <CheckCircle className="h-4 w-4" /> Finalizează
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => setSecondaryPanel({ type: 'consultForm', appointmentId: apt.id })}
+            >
+              <FileText className="h-4 w-4" /> Scrisoare medicală
+            </Button>
+            <Button className="w-full gap-2" onClick={() => setFinalizeModalOpen(true)}>
+              <CheckCircle className="h-4 w-4" /> Finalizează
+            </Button>
+          </>
         )}
         <FinalizationModal appointmentId={apt.id} open={finalizeModalOpen} onOpenChange={setFinalizeModalOpen} />
 
