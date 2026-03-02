@@ -1,10 +1,11 @@
 import React from 'react';
 import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient, useCreateTabletSession, useRemoveTabletSession } from '@/hooks/data';
+import { useUIState } from '@/store/uiStore';
 import { useMockData } from '@/hooks/mock/MockDataProvider';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { RefreshCw, Tablet } from 'lucide-react';
+import { RefreshCw, Tablet, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface FormsStatusPanelProps {
@@ -18,6 +19,7 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
   const getFormsStatusForPatient = useFormsStatusForPatient();
   const { mutate: addTabletSession } = useCreateTabletSession();
   const { mutate: removeTabletSession } = useRemoveTabletSession();
+  const { setSecondaryPanel } = useUIState();
 
   if (!apt) return null;
 
@@ -29,7 +31,6 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
     const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
 
     const generateCode = () => {
-      // Use last 4 digits of patient's CNP as access code
       const patient = patients.find(p => p.id === patientId);
       const code = patient?.cnp ? patient.cnp.slice(-4) : String(Math.floor(1000 + Math.random() * 9000));
       addTabletSession({ accessCode: code, appointmentId, patientId, active: true, createdAt: new Date().toISOString() });
@@ -41,6 +42,9 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
       generateCode();
     };
 
+    const handleViewForm = (formId: string) => {
+      setSecondaryPanel({ type: 'formViewer', formId, patientId });
+    };
 
     return (
       <div className="space-y-3">
@@ -56,9 +60,19 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
           const isExpired = latestForm && latestForm.expiresAt <= now;
 
           return (
-            <div key={tid} className="flex items-center justify-between px-3 py-2 rounded-md bg-accent/30 border border-border">
-              <div>
-                <p className="text-xs font-medium">{template.title}</p>
+            <div
+              key={tid}
+              className={cn(
+                "flex items-center justify-between px-3 py-2 rounded-md bg-accent/30 border border-border",
+                latestForm && "cursor-pointer hover:bg-accent/60 transition-colors"
+              )}
+              onClick={() => latestForm && handleViewForm(latestForm.id)}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-medium">{template.title}</p>
+                  {latestForm && <Eye className="h-3 w-3 text-muted-foreground" />}
+                </div>
                 {isValid && (
                   <p className="text-[10px] text-muted-foreground mt-0.5">
                     Semnat pe {new Date(latestForm.completedAt).toLocaleDateString('ro-RO')}, expiră {new Date(latestForm.expiresAt).toLocaleDateString('ro-RO')}
@@ -68,7 +82,7 @@ export default function FormsStatusPanel({ appointmentId }: FormsStatusPanelProp
                 {!latestForm && <p className="text-[10px] text-muted-foreground mt-0.5">Nesemnat</p>}
               </div>
               <span className={cn(
-                'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                'text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0',
                 isValid && 'bg-emerald-500/20 text-emerald-700',
                 isExpired && 'bg-red-500/20 text-red-700',
                 !latestForm && 'bg-amber-500/20 text-amber-700',

@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { LogIn, Play, CheckCircle, RotateCcw, X, FileText, Plus, Minus, Tablet, AlertTriangle, Calendar } from 'lucide-react';
+import { LogIn, Play, CheckCircle, RotateCcw, X, FileText, Plus, Minus, Tablet, AlertTriangle, Calendar, ChevronDown, RefreshCw } from 'lucide-react';
 import type { AppointmentStatus } from '@/types';
 import FinalizationModal from '@/components/modals/FinalizationModal';
 import FormsStatusPanel from '@/components/forms/FormsStatusPanel';
@@ -78,7 +79,7 @@ function PatientBlock({ patientId, consultations, isInConsult, onDurationChange,
   );
 }
 
-function PatientHeader({ appointmentId, patientId, formsReady }: { appointmentId: string; patientId: string; formsReady: boolean }) {
+function PatientHeader({ appointmentId, patientId, formsReady, onRefreshForms }: { appointmentId: string; patientId: string; formsReady: boolean; onRefreshForms?: () => void }) {
   const { data: patient } = usePatientById(patientId);
   const { tabletSessions } = useMockData();
   const session = tabletSessions.find(s => s.appointmentId === appointmentId && s.patientId === patientId && s.active);
@@ -87,25 +88,40 @@ function PatientHeader({ appointmentId, patientId, formsReady }: { appointmentId
 
   return (
     <div className={cn(
-      "p-3 rounded-md border space-y-1",
+      "p-3 rounded-md border",
       !formsReady ? "border-destructive/50 bg-destructive/5" : "border-border bg-accent/50"
     )}>
-      <p className="text-sm font-bold">{patient.lastName} {patient.firstName}</p>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>{patient.dateOfBirth}</span>
-        <span>{patient.phone}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 flex-1 min-w-0">
+          <p className="text-sm font-bold">{patient.lastName} {patient.firstName}</p>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>{patient.dateOfBirth}</span>
+            <span>{patient.phone}</span>
+          </div>
+          {!formsReady && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+              <span className="text-[10px] font-semibold text-destructive">Formulare incomplete!</span>
+              {onRefreshForms && (
+                <Button variant="ghost" size="icon" className="h-5 w-5 ml-1" onClick={onRefreshForms}>
+                  <RefreshCw className="h-3 w-3 text-destructive" />
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+        {session && (
+          <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-md bg-primary/10 border border-primary/30 flex-shrink-0">
+            <Tablet className="h-4 w-4 text-primary" />
+            <span className="text-lg font-bold tracking-[0.25em] text-primary leading-none">{session.accessCode}</span>
+            <span className="text-[8px] text-primary/60 uppercase">cod tabletă</span>
+          </div>
+        )}
       </div>
-      {session && (
-        <div className="flex items-center gap-2 mt-1">
-          <Tablet className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs font-bold tracking-widest text-primary">{session.accessCode}</span>
-        </div>
-      )}
-      {!formsReady && (
-        <div className="flex items-center gap-1.5 mt-1">
-          <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-          <span className="text-[10px] font-semibold text-destructive">Formulare incomplete!</span>
-        </div>
+      {formsReady && onRefreshForms && (
+        <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 mt-1 text-muted-foreground" onClick={onRefreshForms}>
+          <RefreshCw className="h-3 w-3" /> Sincronizează formulare
+        </Button>
       )}
     </div>
   );
@@ -113,6 +129,7 @@ function PatientHeader({ appointmentId, patientId, formsReady }: { appointmentId
 
 function PastConsultations({ patientId, currentAppointmentId }: { patientId: string; currentAppointmentId: string }) {
   const { data: appointments } = usePatientAppointments(patientId);
+  const { data: consultationTypes } = useConsultationTypes();
   const { setSecondaryPanel } = useUIState();
 
   const pastFinalized = useMemo(() =>
@@ -124,7 +141,7 @@ function PastConsultations({ patientId, currentAppointmentId }: { patientId: str
 
   return (
     <div>
-      <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Consulturi anterioare</p>
+      <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Scrisori medicale anterioare</p>
       <div className="space-y-1">
         {pastFinalized.map(a => (
           <button
@@ -136,7 +153,10 @@ function PastConsultations({ patientId, currentAppointmentId }: { patientId: str
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium">{a.date} · {a.startTime || 'Walk-in'}</p>
               <p className="text-[10px] text-muted-foreground truncate">
-                {a.patients.flatMap(p => p.consultations.map(c => c.consultationTypeId)).join(', ')}
+                {a.patients.flatMap(p => p.consultations.map(c => {
+                  const ct = consultationTypes.find(t => t.id === c.consultationTypeId);
+                  return ct?.name ?? c.consultationTypeId;
+                })).join(', ')}
               </p>
             </div>
             <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
@@ -157,6 +177,8 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountNote, setDiscountNote] = useState('');
+  const [formsRefreshKey, setFormsRefreshKey] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const getFormsStatus = useFormsStatusForPatient();
 
   useEffect(() => {
@@ -176,11 +198,15 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   const doctorCategoryIds = doctor?.categoryIds || [];
   const availableConsultTypes = allConsultationTypes.filter(ct => doctorCategoryIds.includes(ct.categoryId));
 
-  // Check forms readiness per patient
   const patientFormsReady = apt.patients.map(ap => {
     const status = getFormsStatus(ap.patientId, ap.consultations.map(c => c.consultationTypeId));
     return status.completed >= status.total;
   });
+
+  const handleRefreshForms = () => {
+    setFormsRefreshKey(k => k + 1);
+    toast({ title: 'Formulare resincronizate' });
+  };
 
   const transition = (status: AppointmentStatus, action: string) => {
     updateStatus({
@@ -240,11 +266,15 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
         <span className="text-xs text-muted-foreground">{apt.date} · {apt.startTime || 'Walk-in'}</span>
       </div>
 
-      {/* Patient header with name, DOB, code, forms warning */}
       {apt.patients.map((ap, idx) => (
         <div key={idx} className="space-y-1.5">
           {showPatientHeader && (
-            <PatientHeader appointmentId={apt.id} patientId={ap.patientId} formsReady={patientFormsReady[idx]} />
+            <PatientHeader
+              appointmentId={apt.id}
+              patientId={ap.patientId}
+              formsReady={patientFormsReady[idx]}
+              onRefreshForms={handleRefreshForms}
+            />
           )}
           <PatientBlock
             patientId={ap.patientId}
@@ -265,7 +295,6 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
         </div>
       ))}
 
-      {/* Add consultation during in_consult */}
       {isInConsult && (
         <div className="space-y-2">
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Adaugă consultație</p>
@@ -284,7 +313,6 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
         </div>
       )}
 
-      {/* Discount section — only during in_consult */}
       {isInConsult && (
         <div className="p-3 rounded-md border border-border space-y-2">
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Discount / Spor</p>
@@ -310,25 +338,30 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
         </div>
       )}
 
-      <div>
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Istoric</p>
-        <div className="space-y-1.5">
-          {apt.timeline.map((t, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-              <div>
-                <span className="font-medium">{t.action}</span>
-                {t.actor && <span className="text-muted-foreground ml-1">— {t.actor}</span>}
-                <p className="text-[10px] text-muted-foreground">{new Date(t.timestamp).toLocaleString('ro-RO')}</p>
+      {/* Collapsible timeline */}
+      <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+        <CollapsibleTrigger className="flex items-center gap-1.5 w-full group">
+          <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", historyOpen && "rotate-180")} />
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Istoric ({apt.timeline.length})</p>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          <div className="space-y-1.5">
+            {apt.timeline.map((t, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                <div>
+                  <span className="font-medium">{t.action}</span>
+                  {t.actor && <span className="text-muted-foreground ml-1">— {t.actor}</span>}
+                  <p className="text-[10px] text-muted-foreground">{new Date(t.timestamp).toLocaleString('ro-RO')}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
-      <FormsStatusPanel appointmentId={apt.id} />
+      <FormsStatusPanel key={formsRefreshKey} appointmentId={apt.id} />
 
-      {/* Past consultations */}
       {apt.patients[0] && (
         <PastConsultations patientId={apt.patients[0].patientId} currentAppointmentId={apt.id} />
       )}
