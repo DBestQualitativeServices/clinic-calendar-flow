@@ -45,6 +45,10 @@
     --status-anulat: 0 0% 65%;
     --status-no-show: 0 72% 58%;
     --status-blocked: 0 0% 80%;
+    --status-valid: 152 69% 40%;
+    --status-valid-foreground: 152 69% 25%;
+    --status-expired: 0 0% 55%;
+    --status-expired-foreground: 0 0% 40%;
 
     /* Specialization chip colors */
     --spec-estetica: 330 65% 55%;
