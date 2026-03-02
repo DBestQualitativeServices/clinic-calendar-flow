@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useUIState } from '@/store/uiStore';
-import { usePatientById, useUpdatePatient } from '@/hooks/mock';
+import { usePatientById, useUpdatePatient } from '@/hooks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

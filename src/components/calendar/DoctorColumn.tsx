@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import type { Doctor, Appointment, TimeBlock } from '@/types';
-import { useCategories } from '@/hooks/mock';
+import { useCategories } from '@/hooks/data';
 import { useUIState } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import AppointmentCard from './AppointmentCard';

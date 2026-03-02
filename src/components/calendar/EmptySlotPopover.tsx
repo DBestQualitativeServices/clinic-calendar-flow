@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useUIState } from '@/store/uiStore';
-import { useCreateBlockedSlot } from '@/hooks/mock';
+import { useCreateBlockedSlot } from '@/hooks/data';
 import { minutesToTime, timeToMinutes } from '@/lib/calendar-utils';
 import { toast } from '@/hooks/use-toast';
 

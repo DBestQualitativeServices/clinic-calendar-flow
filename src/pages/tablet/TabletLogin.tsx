@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
-import { useTabletSessionByCode } from '@/hooks/mock';
+import { useTabletSessionByCode } from '@/hooks/data';
 import { FileText } from 'lucide-react';
 
 export default function TabletLogin() {

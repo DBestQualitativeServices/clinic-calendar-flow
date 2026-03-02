@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useUIState } from '@/store/uiStore';
-import { useDoctors, useAppointments, useBlockedSlots } from '@/hooks/mock';
+import { useDoctors, useAppointments, useBlockedSlots } from '@/hooks/data';
 import { generateTimeSlots } from '@/lib/calendar-utils';
 import TimeColumn from './TimeColumn';
 import DoctorColumn from './DoctorColumn';

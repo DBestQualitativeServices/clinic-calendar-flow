@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient, useCreateTabletSession, useRemoveTabletSession } from '@/hooks/mock';
+import { useAppointmentById, usePatientById, useFormTemplates, useFormsStatusForPatient, useCreateTabletSession, useRemoveTabletSession } from '@/hooks/data';
 import { useMockData } from '@/hooks/mock/MockDataProvider';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';

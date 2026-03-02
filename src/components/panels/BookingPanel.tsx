@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useUIState, type PanelType } from '@/store/uiStore';
-import { usePatients, useDoctors, useCategories, useConsultationTypes, useCreateAppointment, useAvailableSlots } from '@/hooks/mock';
-import { usePatientById } from '@/hooks/mock';
+import { usePatients, useDoctors, useCategories, useConsultationTypes, useCreateAppointment, useAvailableSlots, usePatientById } from '@/hooks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

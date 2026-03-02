@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useUIState } from '@/store/uiStore';
-import { useCategories, useDoctors } from '@/hooks/mock';
+import { useCategories, useDoctors } from '@/hooks/data';
 import { cn } from '@/lib/utils';
 
 export default function GlobalToolbar() {

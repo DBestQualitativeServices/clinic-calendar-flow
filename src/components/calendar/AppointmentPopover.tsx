@@ -3,7 +3,7 @@ import type { Appointment, AppointmentStatus } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { useUIState } from '@/store/uiStore';
-import { usePatientById, useUpdateAppointmentStatus, useCheckinAppointment, useCancelAppointment } from '@/hooks/mock';
+import { usePatientById, useUpdateAppointmentStatus, useCheckinAppointment, useCancelAppointment } from '@/hooks/data';
 import { formatPatientName } from '@/lib/calendar-utils';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
