@@ -82,13 +82,9 @@ export default function GlobalToolbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(-1)}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className={cn("gap-1.5 font-medium", isToday && "ring-2 ring-primary/30")}>
+            <Button variant="outline" size="sm" className={cn("gap-1.5 font-medium w-[220px] justify-start", isToday && "ring-2 ring-primary/30")}>
               <CalendarIcon className="h-3.5 w-3.5" />
               {format(currentDate, "EEEE, d MMMM yyyy", { locale: ro })}
             </Button>
@@ -103,6 +99,9 @@ export default function GlobalToolbar() {
           </PopoverContent>
         </Popover>
 
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(-1)}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDay(1)}>
           <ChevronRight className="h-4 w-4" />
         </Button>
