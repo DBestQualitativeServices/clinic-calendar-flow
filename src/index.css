@@ -55,6 +55,21 @@
     --spec-medicala: 204 98% 38%;
     --spec-generala: 168 55% 48%;
 
+    /* Consultation type colors — Estetica family (warm pinks/reds) */
+    --consult-dermapen: 340 60% 52%;
+    --consult-botox: 310 55% 50%;
+    --consult-acid-hialuronic: 350 65% 58%;
+    --consult-peeling: 20 70% 55%;
+    /* Consultation type colors — Medicala family (cool blues) */
+    --consult-chirurgie: 220 70% 50%;
+    --consult-dermatoscopie: 195 75% 45%;
+    --consult-crioterapie: 240 55% 58%;
+    --consult-biopsie: 260 50% 55%;
+    /* Consultation type colors — Generala family (teals/greens) */
+    --consult-consultatie: 168 55% 45%;
+    --consult-control: 145 50% 45%;
+    --consult-gdpr: 180 40% 42%;
+
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
