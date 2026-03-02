@@ -293,50 +293,214 @@ export const initialCompletedForms: CompletedForm[] = [
   {
     id: "cf6",
     patientId: "p-9",
-    formTemplateId: "ft1", // GDPR
+    formTemplateId: "ft1",
     completedAt: todayAt("07:45"),
-    expiresAt: `${today().replace("2026", "2027")}T07:45:00`, // valid 1 an
+    expiresAt: `${today().replace("2026", "2027")}T07:45:00`,
     answers: [
       { questionId: "q1", value: true },
       { questionId: "q2", value: true },
     ],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    signatures: ["data:image/png;base64,SIG"],
     appointmentId: "apt-7",
   },
   {
     id: "cf7",
     patientId: "p-9",
-    formTemplateId: "ft2", // Alergii Botox
+    formTemplateId: "ft2",
     completedAt: todayAt("07:50"),
-    expiresAt: todayAt("23:59"), // valid pana diseara (1 zi)
+    expiresAt: todayAt("23:59"),
     answers: [
       { questionId: "q3", value: "Nu" },
       { questionId: "q5", value: "Nu" },
     ],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    signatures: ["data:image/png;base64,SIG"],
     appointmentId: "apt-7",
   },
   {
     id: "cf8",
     patientId: "p-9",
-    formTemplateId: "ft4", // Fotografiere
+    formTemplateId: "ft4",
     completedAt: todayAt("07:52"),
     expiresAt: `${today().replace("2026", "2027")}T07:52:00`,
     answers: [
       { questionId: "q9", value: true },
       { questionId: "q10", value: true },
     ],
-    signatures: [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    ],
+    signatures: ["data:image/png;base64,SIG"],
     appointmentId: "apt-7",
   },
-];
 
+  // === p-2 (Ana Popa) — ft1 valid, ft4 expired ===
+  {
+    id: "cf9",
+    patientId: "p-2",
+    formTemplateId: "ft1",
+    completedAt: "2026-01-10T11:00:00",
+    expiresAt: "2027-01-10T11:00:00",
+    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf10",
+    patientId: "p-2",
+    formTemplateId: "ft4",
+    completedAt: yesterdayAt("08:00"),
+    expiresAt: todayAt("08:00"), // expired
+    answers: [{ questionId: "q9", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+
+  // === p-4 (Elena Stoica) — ft1, ft3, ft4 all valid ===
+  {
+    id: "cf11",
+    patientId: "p-4",
+    formTemplateId: "ft1",
+    completedAt: "2026-02-01T09:00:00",
+    expiresAt: "2027-02-01T09:00:00",
+    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: false }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf12",
+    patientId: "p-4",
+    formTemplateId: "ft3",
+    completedAt: todayAt("07:30"),
+    expiresAt: todayAt("23:59"),
+    answers: [{ questionId: "q6", value: true }, { questionId: "q7", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf13",
+    patientId: "p-4",
+    formTemplateId: "ft4",
+    completedAt: "2026-02-01T09:10:00",
+    expiresAt: "2027-02-01T09:10:00",
+    answers: [{ questionId: "q9", value: true }, { questionId: "q10", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+
+  // === p-8 (Daniela Neagu) — ft1 expired only ===
+  {
+    id: "cf14",
+    patientId: "p-8",
+    formTemplateId: "ft1",
+    completedAt: "2025-02-15T10:00:00",
+    expiresAt: "2026-02-15T10:00:00", // expired (before today March 2026)
+    answers: [{ questionId: "q1", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+
+  // === p-10 (Simona Tudor) — ft1, ft2, ft4 all valid (Botox-ready) ===
+  {
+    id: "cf15",
+    patientId: "p-10",
+    formTemplateId: "ft1",
+    completedAt: "2026-02-20T10:00:00",
+    expiresAt: "2027-02-20T10:00:00",
+    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf16",
+    patientId: "p-10",
+    formTemplateId: "ft2",
+    completedAt: todayAt("08:00"),
+    expiresAt: todayAt("23:59"),
+    answers: [{ questionId: "q3", value: "Nu" }, { questionId: "q5", value: "Nu" }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf17",
+    patientId: "p-10",
+    formTemplateId: "ft4",
+    completedAt: "2026-02-20T10:10:00",
+    expiresAt: "2027-02-20T10:10:00",
+    answers: [{ questionId: "q9", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+
+  // === p-11 (Florin Georgescu) — just GDPR ===
+  {
+    id: "cf18",
+    patientId: "p-11",
+    formTemplateId: "ft1",
+    completedAt: "2026-01-05T14:00:00",
+    expiresAt: "2027-01-05T14:00:00",
+    answers: [{ questionId: "q1", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+
+  // === p-12 (Roxana Lazar) — ft1, ft3, ft4, ft5 all valid ===
+  {
+    id: "cf19",
+    patientId: "p-12",
+    formTemplateId: "ft1",
+    completedAt: "2026-02-10T09:00:00",
+    expiresAt: "2027-02-10T09:00:00",
+    answers: [{ questionId: "q1", value: true }, { questionId: "q2", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf20",
+    patientId: "p-12",
+    formTemplateId: "ft3",
+    completedAt: todayAt("07:00"),
+    expiresAt: todayAt("23:59"),
+    answers: [{ questionId: "q6", value: true }, { questionId: "q7", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf21",
+    patientId: "p-12",
+    formTemplateId: "ft4",
+    completedAt: "2026-02-10T09:15:00",
+    expiresAt: "2027-02-10T09:15:00",
+    answers: [{ questionId: "q9", value: true }, { questionId: "q10", value: false }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf22",
+    patientId: "p-12",
+    formTemplateId: "ft5",
+    completedAt: todayAt("07:10"),
+    expiresAt: todayAt("23:59"),
+    answers: [
+      { questionId: "q11", value: "Roxana Lazar" },
+      { questionId: "q12", value: "Parinte" },
+      { questionId: "q13", value: true },
+    ],
+    signatures: ["data:image/png;base64,SIG1", "data:image/png;base64,SIG2"],
+  },
+
+  // === p-14 (Andreea Matei) — ft1 valid, ft2 expired, ft4 valid ===
+  {
+    id: "cf23",
+    patientId: "p-14",
+    formTemplateId: "ft1",
+    completedAt: "2026-02-25T11:00:00",
+    expiresAt: "2027-02-25T11:00:00",
+    answers: [{ questionId: "q1", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf24",
+    patientId: "p-14",
+    formTemplateId: "ft2",
+    completedAt: yesterdayAt("10:00"),
+    expiresAt: todayAt("10:00"), // expired
+    answers: [{ questionId: "q3", value: "Da" }, { questionId: "q4", value: "Alergie la latex" }, { questionId: "q5", value: "Nu" }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+  {
+    id: "cf25",
+    patientId: "p-14",
+    formTemplateId: "ft4",
+    completedAt: "2026-02-25T11:10:00",
+    expiresAt: "2027-02-25T11:10:00",
+    answers: [{ questionId: "q9", value: true }, { questionId: "q10", value: true }],
+    signatures: ["data:image/png;base64,SIG"],
+  },
+];
 // ===== Appointments =====
 //
 // Snapshot: e dimineata (~10:00) pe 1 Martie 2026 (Sambata — policlinica e deschisa L-S)
