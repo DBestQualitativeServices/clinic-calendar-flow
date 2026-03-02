@@ -9,6 +9,7 @@ import AppLayout from "./components/layout/AppLayout";
 import Index from "./pages/Index";
 import FormsPage from "./pages/FormsPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import ConsultationsPage from "./pages/ConsultationsPage";
 import PatientsPage from "./pages/PatientsPage";
 import NotFound from "./pages/NotFound";
 import TabletLayout from "./pages/tablet/TabletLayout";
@@ -32,7 +33,7 @@ const App = () => (
                 <Route path="/scheduling" element={<Index />} />
                 <Route path="/forms" element={<FormsPage />} />
                 <Route path="/patients" element={<PatientsPage />} />
-                <Route path="/consultations" element={<PlaceholderPage />} />
+                <Route path="/consultations" element={<ConsultationsPage />} />
                 <Route path="/settings" element={<PlaceholderPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/scheduling" replace />} />

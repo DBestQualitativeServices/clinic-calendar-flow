@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils';
 const SEARCH_PLACEHOLDERS: Record<string, string> = {
   '/scheduling': 'Caută pacient, consultație, doctor...',
   '/patients': 'Caută pacient (nume, telefon, CNP)...',
-  '/forms': 'Caută pacient pentru formulare...',
+  '/forms': 'Caută pacient sau formular...',
+  '/consultations': 'Caută pacient sau consultație...',
 };
 
 export default function GlobalToolbar() {
