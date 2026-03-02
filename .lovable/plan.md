@@ -1,95 +1,68 @@
 
 
-# Plan: Medical Forms Module
+# Plan: Migrare mock → API cu React Query
 
 ## Overview
-Add a medical forms management system to the existing clinic scheduling app. Two interfaces: reception desk (desktop, integrated with sidebar nav) and patient tablet (separate `/tablet` route, touch-optimized). This is a large feature — I'll implement it in two batches.
+Create `src/hooks/api/` folder mirroring every export from `src/hooks/mock/index.ts`, using `useQuery`/`useMutation` + `apiFetch`. Then update `hooks/data/index.ts` to switch with one line. No visual changes.
 
-## What changes
+## New files
 
-### 1. Types & Mock Data
-- Add to `src/types/index.ts`: `FormTemplate`, `FormQuestion`, `CompletedForm`, `TabletSession`, `ConsultFormRequirements`
-- Add to `src/data/mock.ts`: all 5 form templates, `consultFormRequirements` map (consultation name → template IDs), sample `completedForms` (valid, expired, none scenarios), sample `tabletSessions`
+### `src/hooks/api/index.ts`
+Barrel file exporting all symbols — same names as `mock/index.ts`. Exports a no-op `MockDataProvider` wrapper and re-exports `FormsStatus` type.
 
-### 2. Forms State in appStore
-- Add `completedForms`, `tabletSessions` arrays to `AppProvider` state
-- Add actions: `addCompletedForm`, `addTabletSession`, `removeTabletSession`
-- Expose a helper `getFormsStatus(appointmentId)` that computes required vs completed/valid forms for a given appointment
+### Query hooks (`src/hooks/api/queries/`)
+Each file uses `useQuery` + `apiFetch`. 15 files:
 
-### 3. Sidebar Navigation (A5)
-- Create `src/components/layout/SidebarNav.tsx` — dark background (`#1B2A3D`), collapsible (icon-only mode), state persisted in `localStorage`
-- Items: Programări (`/scheduling`), Formulare (`/forms`), Pacienți/Consulturi/Setări (placeholders)
-- Create `src/components/layout/AppLayout.tsx` — wraps sidebar + content area
-- Restructure routing in `App.tsx`:
-  - `/scheduling` → existing Index content (calendar)
-  - `/forms` → FormsPage
-  - `/patients`, `/consultations`, `/settings` → placeholder pages
-  - `/` redirects to `/scheduling`
-  - `/tablet` → tablet flow (NO sidebar, separate layout)
-- Move `AppProvider` up into `AppLayout` so state is shared across reception pages
+| File | queryKey | Endpoint |
+|------|----------|----------|
+| `useDoctors.ts` | `['doctors']` | `GET /doctors` |
+| `usePatients.ts` | `['patients', search]` | `GET /patients?search={search}` |
+| `usePatientById.ts` | `['patients', id]` | `GET /patients/{id}` |
+| `useCategories.ts` | `['categories']` | `GET /categories` |
+| `useConsultationTypes.ts` | `['consultationTypes']` | `GET /consultation-types` |
+| `useAppointments.ts` | `['appointments', date, doctorId]` | `GET /appointments?date=&doctorId=` |
+| `useAppointmentById.ts` | `['appointments', id]` | `GET /appointments/{id}` |
+| `useUnresolvedAppointments.ts` | `['appointments', 'unresolved']` | `GET /appointments?status=unresolved` |
+| `useBlockedSlots.ts` | `['blockedSlots', date]` | `GET /blocked-slots?date=` |
+| `useAvailableSlots.ts` | `['availableSlots', ...]` | `GET /appointments/available-slots?...` |
+| `useFormTemplates.ts` | `['formTemplates']` | `GET /form-templates` |
+| `useFormsStatus.ts` | `['formsStatus', aptId]` | `GET /appointments/{id}/form-readiness` |
+| `useCompletedForms.ts` | `['completedForms', patientId]` | `GET /form-submissions?patientId=` |
+| `useTabletSession.ts` | `['tabletSession', aptId]` | `GET /signing-sessions?appointmentId=` |
+| `useTabletSessionByCode.ts` | `['tabletSession', 'code', code]` | `GET /signing-sessions/code/{code}` |
 
-### 4. FormsStatusBadge (A1)
-- Create `src/components/forms/FormsStatusBadge.tsx` — small chip showing `completed/total` with green/orange/red background
-- Uses `getFormsStatus()` helper to compute counts from consultation types → required form templates → completed forms
-- Integrate into existing `AppointmentCard.tsx`, `AppointmentPopover.tsx`, `AppointmentDetailsPanel.tsx`
+Special: `useFormsStatusForPatient` returns a callback that calls `apiFetch` directly (not a query hook).
 
-### 5. FormsStatusPanel (A2)
-- Create `src/components/forms/FormsStatusPanel.tsx` — detailed forms section
-- Shows each required form with status badge (Valid/Pending/Expirat), dates
-- Tablet access code display with Copy + Regenerate buttons
-- Multi-patient support with tabs
-- Integrate as a section inside `AppointmentDetailsPanel.tsx`
+### Mutation hooks (`src/hooks/api/mutations/`)
+Each file uses `useMutation` + cache invalidation. 14 files:
 
-### 6. FormsChecklistItem (A3)
-- Add forms line to `FinalizationModal.tsx` checklist — shows `X/Y` status, expandable list of missing forms if incomplete, non-blocking
+| File | Method | Endpoint | Invalidates |
+|------|--------|----------|-------------|
+| `useCreateAppointment.ts` | POST | `/appointments` | `appointments` |
+| `useUpdateAppointmentStatus.ts` | PATCH | `/appointments/{id}` | `appointments` |
+| `useCheckinAppointment.ts` | POST | `/appointments/{id}/checkin` | `appointments` |
+| `useCompleteAppointment.ts` | POST | `/appointments/{id}/complete` | `appointments` |
+| `useCancelAppointment.ts` | POST | `/appointments/{id}/cancel` | `appointments` |
+| `useMarkNoShow.ts` | POST | `/appointments/{id}/no-show` | `appointments` |
+| `useRescheduleAppointment.ts` | POST | `/appointments/{id}/reschedule` | `appointments` |
+| `useCreateBlockedSlot.ts` | POST | `/blocked-slots` | `blockedSlots` |
+| `useDeleteBlockedSlot.ts` | DELETE | `/blocked-slots/{id}` | `blockedSlots` |
+| `useSubmitForm.ts` | POST | `/form-submissions` | `completedForms`, `formsStatus` |
+| `useCreatePatient.ts` | POST | `/patients` | `patients` |
+| `useUpdatePatient.ts` | PUT | `/patients/{id}` | `patients` |
+| `useCreateTabletSession.ts` | POST | `/signing-sessions` | `tabletSession` |
+| `useRemoveTabletSession.ts` | DELETE | `/signing-sessions/{id}` | `tabletSession` |
 
-### 7. FormsPage (A4)
-- Create `src/pages/FormsPage.tsx` — patient search bar, table of form history with columns (Form, Date, Expires, Status, Appointment)
-- Filter: All/Valid/Expired, sorted by most recent
+### `src/hooks/data/index.ts` update
+Comment out mock line, add api line (but keep mock as default for now — just prepare both lines).
 
-### 8. Tablet Interface (B1-B4)
-- Create `src/pages/tablet/TabletLogin.tsx` — centered layout, OTP-style 4-digit input (using existing `input-otp`), large touch buttons, validates against `tabletSessions`
-- Create `src/pages/tablet/TabletFormsList.tsx` — greeting header, pending forms (orange accent cards) + completed forms (gray), "Verifică formulare noi" button, "Ieșire" button
-- Create `src/pages/tablet/TabletFormView.tsx` — scrollable questions (large checkboxes, radio chips, textareas), HTML5 canvas signature pad (touch/mouse), "Confirm și trimite" button (disabled until required fields + signature), saves as base64
-- Create `src/pages/tablet/TabletLayout.tsx` — wrapper with inactivity timeout (10min), overlay on expiry, resets to login
-- All tablet pages use large fonts (18px+ body), 48px+ buttons, single column, calm medical palette
+## Key decisions
+- Query hooks return `{ data, isLoading, error }` naturally from `useQuery` — signature-compatible
+- Mutation hooks return `{ mutate, mutateAsync, isPending }` naturally from `useMutation` — signature-compatible
+- `MockDataProvider` in api/ is a passthrough `({ children }) => <>{children}</>` so App.tsx doesn't need changes when switching
+- No changes to any component files — they already import from `@/hooks/data`
+- `hooks/data/index.ts` stays on mock export by default; switching is one line change
 
-### 9. Signature Canvas
-- Create `src/components/tablet/SignatureCanvas.tsx` — HTML5 canvas with touch/mouse drawing, "Șterge semnătura" reset button, exports as base64 PNG data URL
+## File count
+~30 new files in `src/hooks/api/`, 1 edit to `src/hooks/data/index.ts`.
 
-## File inventory (new files)
-```
-src/types/index.ts (extend)
-src/data/mock.ts (extend)
-src/store/appStore.tsx (extend)
-src/components/layout/SidebarNav.tsx
-src/components/layout/AppLayout.tsx
-src/components/forms/FormsStatusBadge.tsx
-src/components/forms/FormsStatusPanel.tsx
-src/pages/FormsPage.tsx
-src/pages/tablet/TabletLogin.tsx
-src/pages/tablet/TabletFormsList.tsx
-src/pages/tablet/TabletFormView.tsx
-src/pages/tablet/TabletLayout.tsx
-src/components/tablet/SignatureCanvas.tsx
-src/App.tsx (restructure routes)
-```
-
-## Files modified
-```
-src/components/calendar/AppointmentCard.tsx (add FormsStatusBadge)
-src/components/calendar/AppointmentPopover.tsx (add FormsStatusBadge)
-src/components/panels/AppointmentDetailsPanel.tsx (add FormsStatusPanel)
-src/components/modals/FinalizationModal.tsx (add FormsChecklistItem)
-src/pages/Index.tsx (extract calendar content for reuse in routing)
-```
-
-## Implementation order
-1. Types, mock data, state extensions
-2. Sidebar + routing restructure + AppLayout
-3. FormsStatusBadge + integrations into existing components
-4. FormsStatusPanel + FormsPage
-5. FormsChecklistItem in FinalizationModal
-6. Tablet interface (login → forms list → form view → signature → timeout)
-
-## STATUS: ✅ FULLY IMPLEMENTED
