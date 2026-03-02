@@ -37,7 +37,7 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   const { data: apt } = useAppointmentById(appointmentId);
   const { data: doctors } = useDoctors();
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
-  const { setActivePanel, setSecondaryPanel } = useUIState();
+  const { setActivePanel, setSecondaryPanel, secondaryPanel } = useUIState();
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
 
   // Auto-open consult form when appointment is in_consult
@@ -129,12 +129,19 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
             <Play className="h-4 w-4" /> Forțează "În consult"
           </Button>
         )}
-        {apt.status === 'in_consult' && (
+         {apt.status === 'in_consult' && (
           <>
             <Button
               variant="outline"
               className="w-full gap-2"
-              onClick={() => setSecondaryPanel({ type: 'consultForm', appointmentId: apt.id })}
+              onClick={() => {
+                // Toggle: close if already open, open if closed
+                if (secondaryPanel.type === 'consultForm' && secondaryPanel.appointmentId === apt.id) {
+                  setSecondaryPanel({ type: 'none' });
+                } else {
+                  setSecondaryPanel({ type: 'consultForm', appointmentId: apt.id });
+                }
+              }}
             >
               <FileText className="h-4 w-4" /> Scrisoare medicală
             </Button>
