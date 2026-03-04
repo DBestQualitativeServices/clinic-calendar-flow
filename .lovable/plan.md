@@ -1,28 +1,53 @@
+## Fix: Align `Slot` type in API's `useAvailableSlots`
 
+**Root cause**: `tsconfig.json` maps `@/hooks/data` → `src/hooks/api/`. The API's `useAvailableSlots.ts` exports a `Slot` type with only `{ time, available }`, but `BookingPanel` expects `{ date, time, doctorId, doctorName }` (the mock's `AvailableSlot` shape). TypeScript checks against the API types even though Vite resolves to mock at runtime.
 
-# Plan: Enrich Mock Completed Forms
+**Fix**: Update `src/hooks/api/queries/useAvailableSlots.ts` to use the same `AvailableSlot` interface shape as the mock version (`date`, `time`, `doctorId`, `doctorName`). Remove the `available` field since it's not used anywhere. This keeps both layers symmetrical.
 
-## Problem
-The `/forms` page works but requires searching for a patient. The existing mock data only has completed forms for 4 out of 15 patients (p-1, p-3, p-5, p-9), making it hard to explore the interface.
+### Changes
 
-## What changes
+`**src/hooks/api/queries/useAvailableSlots.ts**` — Replace the `Slot` interface with:
 
-### `src/data/mock.ts` — Add more completed forms
-Add completed forms for ~6 more patients covering diverse scenarios:
+```ts
+export interface AvailableSlot {
+  date: string;
+  time: string;
+  doctorId: string;
+  doctorName: string;
+}
+```
 
-| Patient | Forms | Scenario |
-|---------|-------|----------|
-| p-2 (Ana Popa) | ft1 valid, ft4 expired | Partial — 1 valid, 1 expired |
-| p-4 (Elena Stoica) | ft1 valid, ft3 valid, ft4 valid | All valid (Dermatoscopie + extra) |
-| p-6 (Maria Florescu) | None | Zero forms — tests empty state |
-| p-8 (Daniela Neagu) | ft1 expired | Only expired forms |
-| p-10 (Simona Tudor) | ft1 valid, ft2 valid, ft4 valid | All Botox forms valid |
-| p-11 (Florin Georgescu) | ft1 valid | Just GDPR |
-| p-12 (Roxana Lazar) | ft1 valid, ft3 valid, ft4 valid, ft5 valid | Many forms, all valid |
-| p-14 (Andreea Matei) | ft1 valid, ft2 expired, ft4 valid | Mix valid + expired |
+Update all references from `Slot` to `AvailableSlot` (`EMPTY`, query return type, etc.).
 
-This gives 8+ more `CompletedForm` entries in `initialCompletedForms`, using realistic dates. The intersecting logic already works — same ft1 (GDPR) counts for all consultations that need it.
+`**src/hooks/api/index.tsx**` — Verify `useAvailableSlots` is exported (it already is). No changes expected.
 
-### No other files change
-The `FormsPage`, `useCompletedForms`, and `useFormsStatus` hooks already handle everything correctly. Richer mock data is all that's needed.
+Single file edit, no component changes needed.  
+  
+  
+Fix: Align Slot type in API's useAvailableSlots
 
+Root cause: tsconfig.json maps @/hooks/data → src/hooks/api/. The API's useAvailableSlots.ts exports a Slot type with only { time, available }, but BookingPanel expects { date, time, doctorId, doctorName } (the mock's AvailableSlot shape). TypeScript checks against the API types even though Vite resolves to mock at runtime.
+
+Fix: Update src/hooks/api/queries/useAvailableSlots.ts to use the same AvailableSlot interface shape as the mock version (date, time, doctorId, doctorName). Remove the available field since it's not used anywhere. This keeps both layers symmetrical.
+
+Changes
+
+src/hooks/api/queries/useAvailableSlots.ts — Replace the Slot interface with:
+
+export interface AvailableSlot {
+
+  date: string;
+
+  time: string;
+
+  doctorId: string;
+
+  doctorName: string;
+
+}
+
+Update all references from Slot to AvailableSlot (EMPTY, query return type, etc.).
+
+src/hooks/api/index.tsx — Verify useAvailableSlots is exported (it already is). No changes expected.
+
+Single file edit, no component changes needed.
