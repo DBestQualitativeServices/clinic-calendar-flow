@@ -1,18 +1,30 @@
 {
-  "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/hooks/data": ["./src/hooks/api"],
-      "@/hooks/data/*": ["./src/hooks/api/*"],
-      "@/*": ["./src/*"]
-    },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
-    "skipLibCheck": true,
     "allowJs": true,
+    "noImplicitAny": false,
     "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@/hooks/data": [
+        "./src/hooks/api"
+      ],
+      "@/hooks/data/*": [
+        "./src/hooks/api/*"
+      ]
+    },
+    "skipLibCheck": true,
     "strictNullChecks": false
-  }
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }
