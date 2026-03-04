@@ -1,4 +1,4 @@
-import { useTabletSession, useCreateTabletSession, useRemoveTabletSession, usePatientById } from './data';
+import { useTabletSession, useCreateTabletSession, useRemoveTabletSession, usePatientById } from '@/hooks/data';
 import { toast } from '@/hooks/use-toast';
 import type { TabletSession } from '@/types';
 

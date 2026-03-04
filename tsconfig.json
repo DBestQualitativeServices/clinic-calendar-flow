@@ -4,6 +4,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@/hooks/data": ["./src/hooks/api"],
+      "@/hooks/data/*": ["./src/hooks/api/*"],
       "@/*": ["./src/*"]
     },
     "noImplicitAny": false,
