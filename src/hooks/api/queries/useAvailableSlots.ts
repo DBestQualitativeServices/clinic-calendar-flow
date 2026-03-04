@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 
-interface Slot {
+export interface AvailableSlot {
+  date: string;
   time: string;
-  available: boolean;
+  doctorId: string;
+  doctorName: string;
 }
 
-const EMPTY: Slot[] = [];
+const EMPTY: AvailableSlot[] = [];
 
 export function useAvailableSlots(
   date: string,
