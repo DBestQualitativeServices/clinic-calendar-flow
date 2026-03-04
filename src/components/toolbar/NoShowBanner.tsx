@@ -55,7 +55,7 @@ export default function NoShowBanner() {
   const [expanded, setExpanded] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  if (unresolvedApts.length === 0 || dismissed) return null;
+  if (!unresolvedApts?.length || dismissed) return null;
 
   return (
     <div className="bg-destructive/10 border-b border-destructive/20">

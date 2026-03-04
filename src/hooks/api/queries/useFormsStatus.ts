@@ -1,7 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import type { FormsStatus } from '../types';
+
+const EMPTY_STATUS: FormsStatus = {
+  total: 0, completed: 0,
+  requiredTemplateIds: [], completedTemplateIds: [],
+  missingTemplateIds: [], expiredTemplateIds: [],
+};
 
 export function useFormsStatus(appointmentId: string) {
   return useQuery({
@@ -11,13 +16,15 @@ export function useFormsStatus(appointmentId: string) {
   });
 }
 
-export function useFormsStatusForPatient() {
-  return useCallback(
-    async (patientId: string, consultationTypeIds: string[]): Promise<FormsStatus> => {
+export function useFormsStatusForPatient(patientId: string, consultationTypeIds: string[]) {
+  return useQuery({
+    queryKey: ['formReadiness', patientId, consultationTypeIds],
+    queryFn: () => {
       const params = new URLSearchParams({ patientId });
       consultationTypeIds.forEach(id => params.append('consultationTypeId', id));
       return apiFetch<FormsStatus>(`/form-readiness?${params}`);
     },
-    []
-  );
+    enabled: !!patientId,
+    placeholderData: EMPTY_STATUS,
+  });
 }

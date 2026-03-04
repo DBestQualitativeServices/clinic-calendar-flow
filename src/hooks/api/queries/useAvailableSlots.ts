@@ -6,6 +6,8 @@ interface Slot {
   available: boolean;
 }
 
+const EMPTY: Slot[] = [];
+
 export function useAvailableSlots(
   date: string,
   doctorId?: string,
@@ -21,5 +23,6 @@ export function useAvailableSlots(
     queryKey: ['availableSlots', date, doctorId ?? '', durationMinutes ?? 0, eligibleDoctorIds ?? []],
     queryFn: () => apiFetch<Slot[]>(`/appointments/available-slots?${params}`),
     enabled: !!date,
+    placeholderData: EMPTY,
   });
 }

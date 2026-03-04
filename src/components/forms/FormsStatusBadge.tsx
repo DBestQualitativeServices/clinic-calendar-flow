@@ -11,7 +11,7 @@ interface FormsStatusBadgeProps {
 export default function FormsStatusBadge({ appointmentId, className }: FormsStatusBadgeProps) {
   const { data: status } = useFormsStatus(appointmentId);
 
-  if (status.total === 0) return null;
+  if (!status || status.total === 0) return null;
 
   const allDone = status.completed === status.total;
   const noneDone = status.completed === 0;

@@ -20,6 +20,7 @@ export { useTabletSessionByCode } from './useTabletSessionByCode';
 export { useCreateAppointment } from './useCreateAppointment';
 export { useUpdateAppointmentStatus } from './useUpdateAppointmentStatus';
 export { useCheckinAppointment } from './useCheckinAppointment';
+export { useStartConsultation } from './useStartConsultation';
 export { useCompleteAppointment } from './useCompleteAppointment';
 export { useCancelAppointment } from './useCancelAppointment';
 export { useMarkNoShow } from './useMarkNoShow';

@@ -22,6 +22,7 @@ export { useTabletSessionByCode } from './queries/useTabletSessionByCode';
 export { useCreateAppointment } from './mutations/useCreateAppointment';
 export { useUpdateAppointmentStatus } from './mutations/useUpdateAppointmentStatus';
 export { useCheckinAppointment } from './mutations/useCheckinAppointment';
+export { useStartConsultation } from './mutations/useStartConsultation';
 export { useCompleteAppointment } from './mutations/useCompleteAppointment';
 export { useCancelAppointment } from './mutations/useCancelAppointment';
 export { useMarkNoShow } from './mutations/useMarkNoShow';

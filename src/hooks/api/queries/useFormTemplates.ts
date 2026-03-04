@@ -2,9 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import type { FormTemplate } from '@/types';
 
+const EMPTY: FormTemplate[] = [];
+
 export function useFormTemplates() {
   return useQuery({
     queryKey: ['formTemplates'],
     queryFn: () => apiFetch<FormTemplate[]>('/form-templates'),
+    placeholderData: EMPTY,
   });
 }

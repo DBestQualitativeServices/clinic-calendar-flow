@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useCategories, useUpdateAppointmentStatus, useFormsStatusForPatient, usePatientAppointments } from '@/hooks/data';
+import { useAppointmentById, useDoctors, usePatientById, useConsultationTypes, useCategories, useUpdateAppointmentStatus, useCheckinAppointment, useStartConsultation, useCancelAppointment, useFormsStatusForPatient, usePatientAppointments } from '@/hooks/data';
 import { useTabletCode } from '@/hooks/useTabletCode';
 import { useUIState } from '@/store/uiStore';
 import { formatPatientName, formatDuration } from '@/lib/calendar-utils';
@@ -13,7 +13,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { LogIn, Play, CheckCircle, RotateCcw, X, FileText, Plus, Minus, Tablet, AlertTriangle, Calendar, ChevronDown, RefreshCw } from 'lucide-react';
-import type { AppointmentStatus } from '@/types';
 import FinalizationModal from '@/components/modals/FinalizationModal';
 import FormsStatusPanel from '@/components/forms/FormsStatusPanel';
 
@@ -79,9 +78,11 @@ function PatientBlock({ patientId, consultations, isInConsult, onDurationChange,
   );
 }
 
-function PatientHeader({ appointmentId, patientId, formsReady, onRefreshForms }: { appointmentId: string; patientId: string; formsReady: boolean; onRefreshForms?: () => void }) {
+function PatientHeader({ appointmentId, patientId, consultationTypeIds, onRefreshForms }: { appointmentId: string; patientId: string; consultationTypeIds: string[]; onRefreshForms?: () => void }) {
   const { data: patient } = usePatientById(patientId);
+  const { data: status } = useFormsStatusForPatient(patientId, consultationTypeIds);
   const { session, generate } = useTabletCode(appointmentId, patientId);
+  const formsReady = (status?.completed ?? 0) >= (status?.total ?? 1);
 
 
   if (!patient) return null;
@@ -177,13 +178,15 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
   const { data: allConsultationTypes } = useConsultationTypes();
   const { data: categories } = useCategories();
   const { mutate: updateStatus } = useUpdateAppointmentStatus();
+  const { mutate: checkin } = useCheckinAppointment();
+  const { mutate: startConsultation } = useStartConsultation();
+  const { mutate: cancelAppointment } = useCancelAppointment();
   const { setActivePanel, setSecondaryPanel, secondaryPanel } = useUIState();
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountNote, setDiscountNote] = useState('');
   const [formsRefreshKey, setFormsRefreshKey] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const getFormsStatus = useFormsStatusForPatient();
 
   useEffect(() => {
     if (apt?.status === 'in_consult') {
@@ -195,32 +198,15 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
 
   const doctor = doctors.find(d => d.id === apt.doctorId);
   const badge = STATUS_CONFIG[apt.status];
-  const now = new Date().toISOString();
   const isInConsult = apt.status === 'in_consult';
   
 
   const doctorCategoryIds = doctor?.categoryIds || [];
   const availableConsultTypes = allConsultationTypes.filter(ct => doctorCategoryIds.includes(ct.categoryId));
 
-  const patientFormsReady = apt.patients.map(ap => {
-    const status = getFormsStatus(ap.patientId, ap.consultations.map(c => c.consultationTypeId));
-    return status.completed >= status.total;
-  });
-
   const handleRefreshForms = () => {
     setFormsRefreshKey(k => k + 1);
     toast({ title: 'Formulare resincronizate' });
-  };
-
-  const transition = (status: AppointmentStatus, action: string) => {
-    updateStatus({
-      appointmentId: apt.id,
-      update: {
-        status,
-        timeline: [...apt.timeline, { timestamp: now, action, actor: 'Recepție' }],
-      },
-    });
-    toast({ title: `Status schimbat: ${STATUS_CONFIG[status].label}` });
   };
 
   const handleDurationChange = (patientIdx: number, consultIdx: number, delta: number) => {
@@ -275,7 +261,7 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
           <PatientHeader
               appointmentId={apt.id}
               patientId={ap.patientId}
-              formsReady={patientFormsReady[idx]}
+              consultationTypeIds={ap.consultations.map(c => c.consultationTypeId)}
               onRefreshForms={handleRefreshForms}
           />
           <PatientBlock
@@ -385,12 +371,12 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
 
       <div className="space-y-2 pt-2 border-t border-border">
         {apt.status === 'programat' && (
-          <Button className="w-full gap-2" onClick={() => transition('sosit', 'Check-in')}>
+          <Button className="w-full gap-2" onClick={() => checkin({ appointmentId: apt.id }, { onSuccess: () => toast({ title: `Status schimbat: ${STATUS_CONFIG['sosit'].label}` }) })}>
             <LogIn className="h-4 w-4" /> Check-in
           </Button>
         )}
         {apt.status === 'sosit' && (
-          <Button className="w-full gap-2" onClick={() => transition('in_consult', 'In consult (manual)')}>
+          <Button className="w-full gap-2" onClick={() => startConsultation({ appointmentId: apt.id }, { onSuccess: () => toast({ title: `Status schimbat: ${STATUS_CONFIG['in_consult'].label}` }) })}>
             <Play className="h-4 w-4" /> Forțează "În consult"
           </Button>
         )}
@@ -422,7 +408,7 @@ export default function AppointmentDetailsPanel({ appointmentId }: { appointment
           </Button>
         )}
         {(apt.status === 'programat' || apt.status === 'sosit') && (
-          <Button variant="ghost" className="w-full gap-2 text-xs text-destructive" onClick={() => transition('anulat', 'Anulat')}>
+          <Button variant="ghost" className="w-full gap-2 text-xs text-destructive" onClick={() => cancelAppointment({ appointmentId: apt.id }, { onSuccess: () => toast({ title: `Status schimbat: ${STATUS_CONFIG['anulat'].label}` }) })}>
             <X className="h-3.5 w-3.5" /> Anulează
           </Button>
         )}
