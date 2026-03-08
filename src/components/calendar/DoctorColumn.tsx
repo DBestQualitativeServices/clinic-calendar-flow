@@ -57,9 +57,9 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
   const { setCalendar, calendar } = useUIState();
   const { data: categories } = useCategories();
 
-  const totalSlots = 20;
+  const totalSlots = 40;
   const occupiedSlots = Math.ceil(
-    appointments.filter(a => a.status !== 'anulat' && a.startTime).reduce((sum, a) => sum + a.totalDurationMinutes, 0) / 30
+    appointments.filter(a => a.status !== 'anulat' && a.startTime).reduce((sum, a) => sum + a.totalDurationMinutes, 0) / 15
   );
 
   const handleDoubleClick = () => {

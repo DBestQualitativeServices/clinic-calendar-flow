@@ -15,7 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import EmptySlotPopover from '@/components/calendar/EmptySlotPopover';
 
-const SLOT_HEIGHT = 48;
+const SLOT_HEIGHT = 24;
 
 function DayAppointmentCard({ appointment, highlighted, dimmed }: { appointment: import('@/types').Appointment; highlighted?: boolean; dimmed?: boolean }) {
   const { setActivePanel } = useUIState();
