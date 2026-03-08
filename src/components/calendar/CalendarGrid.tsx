@@ -7,7 +7,7 @@ import TimeColumn from './TimeColumn';
 import DoctorColumn from './DoctorColumn';
 import WalkInZone from './WalkInZone';
 
-const SLOT_HEIGHT = 60;
+const SLOT_HEIGHT = 30;
 
 export default function CalendarGrid() {
   const { calendar } = useUIState();

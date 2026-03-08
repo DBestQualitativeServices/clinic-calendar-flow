@@ -15,7 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import EmptySlotPopover from '@/components/calendar/EmptySlotPopover';
 
-const SLOT_HEIGHT = 48;
+const SLOT_HEIGHT = 24;
 
 function DayAppointmentCard({ appointment, highlighted, dimmed }: { appointment: import('@/types').Appointment; highlighted?: boolean; dimmed?: boolean }) {
   const { setActivePanel } = useUIState();
@@ -291,7 +291,6 @@ function DayColumn({ date, label, doctorId, timeSlots, searchQuery, patients, co
               className="border-b border-border hover:bg-accent/30 transition-colors cursor-pointer relative"
               style={{ height: `${SLOT_HEIGHT}px` }}
             >
-              <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/50" />
             </div>
           </EmptySlotPopover>
         ))}

@@ -34,10 +34,10 @@ export function minutesToTime(minutes: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-/** Generate time slots from 08:00 to 18:00 in 30-min increments */
+/** Generate time slots from 08:00 to 18:00 in 15-min increments */
 export function generateTimeSlots(): string[] {
   const slots: string[] = [];
-  for (let m = 480; m < 1080; m += 30) {
+  for (let m = 480; m < 1080; m += 15) {
     slots.push(minutesToTime(m));
   }
   return slots;
