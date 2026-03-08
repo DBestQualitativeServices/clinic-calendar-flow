@@ -8,11 +8,11 @@ import { timeToMinutes } from './calendar-utils';
 /** Convert an appointment/block start time to absolute top-offset in pixels */
 export function slotTopPx(startTime: string, slotHeight: number, dayStartMinutes = 480): number {
   const startMin = timeToMinutes(startTime) - dayStartMinutes;
-  return (startMin / 30) * slotHeight;
+  return (startMin / 15) * slotHeight;
 }
 
 /** Convert a duration in minutes to height in pixels */
 export function slotHeightPx(durationMinutes: number, slotHeight: number, minHeight?: number): number {
-  const h = (durationMinutes / 30) * slotHeight;
+  const h = (durationMinutes / 15) * slotHeight;
   return minHeight ? Math.max(h, minHeight) : h;
 }
