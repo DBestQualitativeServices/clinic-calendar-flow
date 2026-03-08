@@ -119,7 +119,6 @@ export default function DoctorColumn({ doctor, appointments, timeBlocks, slotHei
               className="border-b border-border relative hover:bg-accent/30 transition-colors cursor-pointer"
               style={{ height: `${slotHeight}px` }}
             >
-              <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/50" />
               {doctor.isOnVacation && <div className="absolute inset-0 bg-muted/30" />}
             </div>
           </EmptySlotPopover>
