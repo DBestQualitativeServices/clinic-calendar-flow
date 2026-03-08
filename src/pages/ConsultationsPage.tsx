@@ -291,7 +291,6 @@ function DayColumn({ date, label, doctorId, timeSlots, searchQuery, patients, co
               className="border-b border-border hover:bg-accent/30 transition-colors cursor-pointer relative"
               style={{ height: `${SLOT_HEIGHT}px` }}
             >
-              <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/50" />
             </div>
           </EmptySlotPopover>
         ))}
